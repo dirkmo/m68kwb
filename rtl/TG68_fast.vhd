@@ -99,9 +99,7 @@ architecture logic of TG68_fast is
    signal OP1outbrief     : std_logic_vector(15 downto 0);
    signal OP1in           : std_logic_vector(31 downto 0);
    signal data_write_tmp  : std_logic_vector(31 downto 0);
-   signal Xtmp         	  : std_logic_vector(31 downto 0);
-   signal PC_dataa, PC_datab, PC_result  : std_logic_vector(31 downto 0);
-   signal setregstore	  : std_logic;
+   signal PC_dataa, PC_datab  : std_logic_vector(31 downto 0);
    signal datatype        : std_logic_vector(1 downto 0);
    signal longread	      : std_logic;
    signal longreaddirect  : std_logic;
@@ -140,18 +138,10 @@ architecture logic of TG68_fast is
    signal rf_dest_addr_tmp		: std_logic_vector(6 downto 0);
    signal rf_source_addr_tmp	: std_logic_vector(6 downto 0);
    signal opcode		  : std_logic_vector(15 downto 0);
-   signal laststate		  : std_logic_vector(1 downto 0);
    signal setstate	      : std_logic_vector(1 downto 0);
  
-   signal mem_address     : std_logic_vector(31 downto 0);
    signal memaddr_a       : std_logic_vector(31 downto 0);
-   signal mem_data_read   : std_logic_vector(31 downto 0);
-   signal mem_data_write  : std_logic_vector(31 downto 0);
-	signal set_mem_rega   : std_logic;
-   signal data_read_ram   : std_logic_vector(31 downto 0);
-   signal data_read_uart  : std_logic_vector(7 downto 0);
- 
-   signal counter_reg     : std_logic_vector(31 downto 0);
+   signal set_mem_rega   : std_logic;
  
 	signal TG68_PC_br8    : std_logic;
 	signal TG68_PC_brw    : std_logic;
@@ -163,7 +153,6 @@ architecture logic of TG68_fast is
 	signal source_areg    : std_logic;
 	signal data_is_source : std_logic;
 	signal set_store_in_tmp    : std_logic;
-	signal store_in_tmp   : std_logic;
 	signal write_back     : std_logic;
 	signal setaddsub      : std_logic;
 	signal setstackaddr   : std_logic;
@@ -254,7 +243,6 @@ architecture logic of TG68_fast is
     signal movem_bits     : std_logic_vector(4 downto 0);
     signal ea_calc_b      : std_logic_vector(31 downto 0);
     signal set_mem_addsub : std_logic;
-    signal bit_bits       : std_logic_vector(1 downto 0);
     signal bit_number_reg : std_logic_vector(4 downto 0);
     signal bit_number     : std_logic_vector(4 downto 0);
     signal exec_Bits	  : std_logic;
@@ -284,8 +272,6 @@ architecture logic of TG68_fast is
     signal niba_h		  : std_logic_vector(5 downto 0);
     signal niba_lc		  : std_logic;
     signal niba_hc		  : std_logic;
-    signal bcda_lc		  : std_logic;
-    signal bcda_hc		  : std_logic;
     signal dummy_s		  : std_logic_vector(8 downto 0);
     signal nibs_l		  : std_logic_vector(5 downto 0);
     signal nibs_h		  : std_logic_vector(5 downto 0);
@@ -297,16 +283,12 @@ architecture logic of TG68_fast is
     signal dummy_div_over : std_logic_vector(16 downto 0);
     signal set_V_Flag	  : std_logic;
     signal OP1sign		  : std_logic;
-    signal set_sign	  	  : std_logic;
-    signal sign			  : std_logic;
     signal sign2		  : std_logic;
     signal muls_msb		  : std_logic;
     signal mulu_reg       : std_logic_vector(31 downto 0);
     signal div_reg        : std_logic_vector(31 downto 0);
     signal div_sign		  : std_logic;
     signal div_quot       : std_logic_vector(31 downto 0);
-    signal div_ovl	      : std_logic;
-    signal pre_V_Flag	  : std_logic;
     signal set_vectoraddr : std_logic;
     signal writeSR	      : std_logic;
 	signal trap_illegal   : std_logic;

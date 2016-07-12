@@ -13,4 +13,4 @@ if ! m68k-elf-objcopy -O binary -S $name $name.bin ; then exit 4 ; fi
 echo "Binary $name.bin erzeugt"
 if ../host/bin2verilog $name.bin 32 > $name.v; then echo "Verilogfile $name.v erzeugt"; fi
 # Signal umbenennen
-sed -i 's/boot_read/mem_data_o/' gpio.v
+sed -i 's/boot_read/mem_data_o/' $name.v

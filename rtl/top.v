@@ -17,36 +17,47 @@ wire WB_RST;
 wire WB_STB;
 wire WB_WE;
 wire WB_ERR;
+wire WB_ACK;
+wire [3:0] WB_SEL; // data selects
+
 wire cpu_clk;
+wire [31:0] cpu_addr;
+wire [31:0] cpu_data_out;
+wire [31:0] cpu_data_in;
+
 wire gpio_ack;
 wire gpio_err;
 wire gpio_inta;
-wire [1:0] slave_select;
-wire [1:0] slave_ack;
-wire [31:0] cpu_addr;
-wire WB_ACK = slave_ack != 'd0;
-wire [3:0] WB_SEL; // data select (uds, lds)
-
-wire [31:0] cpu_data_out;
-wire [31:0] cpu_data_in;
-reg  [31:0] mem_data_o;
 wire [31:0] gpio_data_o;
-wire [31:0] gpio_ext_pad_output;
-wire [31:0] gpio_ext_pad_oe;
+wire [15:0] gpio_ext_pad_output;
+wire [15:0] gpio_ext_pad_oe;
+
+wire [2:0] slave_select;
+wire [2:0] slave_ack;
+
+reg  [31:0] mem_data_o;
+// swap for big endian
+wire [31:0] memory = { mem_data_o[15:8], mem_data_o[7:0], mem_data_o[31:24], mem_data_o[23:16] };
+
+wire [31:0] uart_data_o;
+wire uart_ack;
+wire uart_int;
+
+assign WB_ACK = slave_ack != 'd0;
 
 assign leds[7:0] = gpio_ext_pad_output[7:0];
 
 assign cpu_data_in[31:0] =
-	slave_select == 'd1 ? mem_data_o[31:0] :
+	slave_select == 'd1 ? memory[31:0] :
 	slave_select == 'd2 ? gpio_data_o[31:0] :
+	slave_select == 'd3 ? uart_data_o[31:0] :
 	'dX;
 
 assign slave_ack = {
-	slave_select[0] /*mem always ack*/,
-	slave_select[1] & gpio_ack
+	slave_select[2] & uart_ack,
+	slave_select[1] & gpio_ack,
+	slave_select[0] /*mem always ack*/
 };
-
-assign cpu_addr[1:0] = 2'b00;
 
 TG68_wb cpu(
 	.CLK_I( WB_CLK ),
@@ -54,7 +65,7 @@ TG68_wb cpu(
 	
 	.DAT_I( cpu_data_in ),
 	.DAT_O( cpu_data_out ),
-	.ADR_O( cpu_addr[31:2] ),
+	.ADR_O( cpu_addr[31:0] ),
 	.ACK_I( WB_ACK ),
 	.CYC_O( WB_CYC ),
 	.STB_O( WB_STB ),
@@ -84,7 +95,7 @@ gpio_top gpio(
 	.wb_clk_i( WB_CLK ),
 	.wb_rst_i( WB_RST ),
 	.wb_cyc_i( WB_CYC ),
-	.wb_adr_i( cpu_addr[7:0] ),
+	.wb_adr_i( { cpu_addr[7:2], 2'b0 } ),
 	.wb_dat_i( cpu_data_out ),
 	.wb_sel_i( WB_SEL ),
 	.wb_we_i( WB_WE ),
@@ -95,21 +106,50 @@ gpio_top gpio(
 	.wb_inta_o( gpio_inta ),
 
 	// External GPIO Interface
-	.ext_pad_i('d0),
-	.ext_pad_o(gpio_ext_pad_output),
-	.ext_padoe_o(gpio_ext_pad_oe)
+	.ext_pad_i( 16'd0 ),
+	.ext_pad_o( gpio_ext_pad_output ),
+	.ext_padoe_o( gpio_ext_pad_oe )
+);
+
+uart_top uart(
+	.wb_clk_i( WB_CLK ), 
+	
+	// Wishbone signals
+	.wb_rst_i( WB_RST ),
+	.wb_adr_i( cpu_addr[4:0] ),
+	.wb_dat_i( cpu_data_out ),
+	.wb_dat_o( uart_data_o ),
+	.wb_we_i( WB_WE),
+	.wb_stb_i( slave_select[2] ),
+	.wb_cyc_i( WB_CYC ),
+	.wb_ack_o( uart_ack ),
+	.wb_sel_i( WB_SEL ),
+	.int_o(uart_int), // interrupt request
+
+	// UART	signals
+	// serial input/output
+	.stx_pad_o(uart_tx),
+	.srx_pad_i(uart_rx),
+
+	// modem signals
+	.rts_pad_o(),
+	.cts_pad_i(1'b0),
+	.dtr_pad_o(),
+	.dsr_pad_i(1'b0),
+	.ri_pad_i(1'b0),
+	.dcd_pad_i(1'b0)
 );
 
 // Program memory
 always @(*) begin
 	case( { cpu_addr[31:0] }  )
-`include "../src/gpio.v"
-		default: mem_data_o[31:0] = 32'hX;
+`include "../src/uart.v"
+		default: mem_data_o[31:0] = 32'h0;
 	endcase
 end
 
-
-
+assign cpu_clk = clk_50mhz;
+/*
 reg [20:0] counter = 0;
 assign cpu_clk = counter[20];
 always @(posedge clk_50mhz) begin
@@ -119,5 +159,5 @@ always @(posedge clk_50mhz) begin
 		counter <= counter + 'd1;
 	end
 end
-
+/**/
 endmodule

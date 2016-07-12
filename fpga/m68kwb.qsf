@@ -43,20 +43,12 @@ set_global_assignment -name TOP_LEVEL_ENTITY m68kwb
 set_global_assignment -name ORIGINAL_QUARTUS_VERSION 15.1.2
 set_global_assignment -name PROJECT_CREATION_TIME_DATE "21:00:07  JUNE 19, 2016"
 set_global_assignment -name LAST_QUARTUS_VERSION 15.1.2
-set_global_assignment -name VERILOG_FILE ../rtl/gpio/gpio_top.v
-set_global_assignment -name VERILOG_FILE ../rtl/gpio/gpio_defines.v
-set_global_assignment -name VERILOG_FILE ../rtl/top.v
-set_global_assignment -name VERILOG_FILE ../rtl/timescale.v
-set_global_assignment -name VERILOG_FILE ../rtl/TG68_wb.v
-set_global_assignment -name VHDL_FILE ../rtl/TG68_fast.vhd
-set_global_assignment -name VERILOG_FILE ../rtl/syscon.v
 set_global_assignment -name PROJECT_OUTPUT_DIRECTORY output_files
 set_global_assignment -name MIN_CORE_JUNCTION_TEMP 0
 set_global_assignment -name MAX_CORE_JUNCTION_TEMP 85
 set_global_assignment -name ERROR_CHECK_FREQUENCY_DIVISOR 256
 set_global_assignment -name EDA_SIMULATION_TOOL "ModelSim-Altera (Verilog)"
 set_global_assignment -name EDA_OUTPUT_DATA_FORMAT "VERILOG HDL" -section_id eda_simulation
-set_global_assignment -name VERILOG_FILE m68kwb.v
 set_global_assignment -name PARTITION_NETLIST_TYPE SOURCE -section_id Top
 set_global_assignment -name PARTITION_FITTER_PRESERVATION_LEVEL PLACEMENT_AND_ROUTING -section_id Top
 set_global_assignment -name PARTITION_COLOR 16764057 -section_id Top
@@ -77,7 +69,29 @@ set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to reset_n
 set_location_assignment PIN_P22 -to reset_n
 
 
+
+
+set_global_assignment -name VERILOG_FILE ../rtl/uart16550/uart_wb.v
+set_global_assignment -name VERILOG_FILE ../rtl/uart16550/uart_transmitter.v
+set_global_assignment -name VERILOG_FILE ../rtl/uart16550/uart_top.v
+set_global_assignment -name VERILOG_FILE ../rtl/uart16550/uart_tfifo.v
+set_global_assignment -name VERILOG_FILE ../rtl/uart16550/uart_sync_flops.v
+set_global_assignment -name VERILOG_FILE ../rtl/uart16550/uart_rfifo.v
+set_global_assignment -name VERILOG_FILE ../rtl/uart16550/uart_regs.v
+set_global_assignment -name VERILOG_FILE ../rtl/uart16550/uart_receiver.v
+set_global_assignment -name VERILOG_FILE ../rtl/uart16550/uart_defines.v
+set_global_assignment -name VERILOG_FILE ../rtl/uart16550/uart_debug_if.v
+set_global_assignment -name VERILOG_FILE ../rtl/uart16550/timescale.v
+set_global_assignment -name VERILOG_FILE ../rtl/uart16550/raminfr.v
+set_global_assignment -name VERILOG_FILE ../rtl/gpio/gpio_top.v
+set_global_assignment -name VERILOG_FILE ../rtl/gpio/gpio_defines.v
+set_global_assignment -name VERILOG_FILE ../rtl/top.v
+set_global_assignment -name VERILOG_FILE ../rtl/timescale.v
+set_global_assignment -name VERILOG_FILE ../rtl/TG68_wb.v
+set_global_assignment -name VHDL_FILE ../rtl/TG68_fast.vhd
+set_global_assignment -name VERILOG_FILE ../rtl/syscon.v
+set_global_assignment -name VERILOG_FILE m68kwb.v
 set_global_assignment -name CDF_FILE output_files/Chain1.cdf
-
-
+set_global_assignment -name POWER_PRESET_COOLING_SOLUTION "23 MM HEAT SINK WITH 200 LFPM AIRFLOW"
+set_global_assignment -name POWER_BOARD_THERMAL_MODEL "NONE (CONSERVATIVE)"
 set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top
