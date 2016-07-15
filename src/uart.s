@@ -19,7 +19,7 @@ reset:		.4byte _start
 .equ		UART_MODEMCTRL,	0x100104
 .equ		UART_LINESTAT,	0x100105
 .equ		UART_MODEMSTAT, 0x100106
-.equ		UART_DIVLAT1,	0x100100 /*clk div LSB */
+.equ		UART_DIVLAT1,	0x100100 /*clk div lsb, muss zuletzt geschrieben werden! */
 .equ		UART_DIVLAT2,	0x100101 /* clk div msb */
 
 .equ		UART_DIVVAL1,   27 /* 50 MHz / (16*115200) = 27,13 */
@@ -55,9 +55,17 @@ uart_init:
 			move.b #UART_DIVVAL2, UART_DIVLAT2
 			move.b #UART_DIVVAL1, UART_DIVLAT1
 			/* enable access to rx/tx buffers */
-			move.b #0x00, UART_LINECTRL
-			move.b #65, UART_TXBUF
+			move.b #0x07, UART_LINECTRL /*8bit chars and 2 stop bits*/
+
+			movea.l	#msg, %a0
+hello:		move.b (%a0)+, %d0
+			tst.b %d0
+			beq.s loop
+			move.b %d0, UART_TXBUF
+			bra.s hello
+			
 
 loop:
 			jmp loop
-    
+.data
+msg:		.asciz "Hallo Welt!\n"

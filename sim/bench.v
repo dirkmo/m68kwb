@@ -22,7 +22,7 @@ initial begin
 	#100;
 	reset = 0;
 
-	#1000;
+	#4000;
 	$stop;
 end
 

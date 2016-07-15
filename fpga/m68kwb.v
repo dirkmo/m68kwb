@@ -2,17 +2,18 @@ module m68kwb(
    input clk_50mhz, 
    input reset_n, 
 		
-   output [7:0] leds
+   output uart_tx,
+	input uart_rx
 );
 
 
 top inst(
    .clk_50mhz( clk_50mhz ),
    .reset(~reset_n), 
-   .uart_tx(),
-   .uart_rx(1'b1), 
+   .uart_tx(uart_tx),
+   .uart_rx(uart_rx), 
 		
-   .leds(leds)
+   .leds()
 );
 
 

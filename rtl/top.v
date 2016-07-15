@@ -36,8 +36,11 @@ wire [2:0] slave_select;
 wire [2:0] slave_ack;
 
 reg  [31:0] mem_data_o;
-// swap for big endian
-wire [31:0] memory = { mem_data_o[15:8], mem_data_o[7:0], mem_data_o[31:24], mem_data_o[23:16] };
+`ifdef  LITTLE_ENDIAN
+wire [31:0] memory = { mem_data_o[7:0], mem_data_o[15:8], mem_data_o[23:16], mem_data_o[31:24] };
+`else
+wire [31:0] memory = mem_data_o[31:0];
+`endif
 
 wire [31:0] uart_data_o;
 wire uart_ack;
@@ -148,10 +151,10 @@ always @(*) begin
 	endcase
 end
 
-assign cpu_clk = clk_50mhz;
-/*
-reg [20:0] counter = 0;
-assign cpu_clk = counter[20];
+//assign cpu_clk = clk_50mhz;
+
+reg [2:0] counter = 0;
+assign cpu_clk = counter[0];
 always @(posedge clk_50mhz) begin
 	if( reset ) begin
 		counter <= 0;
