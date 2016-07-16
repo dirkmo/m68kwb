@@ -23,7 +23,7 @@ module TG68_wb(
 wire [31:0] cpu_addr;
 wire [15:0] cpu_data_out;
 wire [1:0] state_out;
-wire cpu_clk_en = (state_out[1:0] == 2'b01) ? 1 : ACK_I;
+wire cpu_clk_en = (state_out[1:0] == 2'b01) ? 1'b1 : ACK_I;
 wire uds_n, uds;
 wire lds_n, lds;
 wire wr_n;
@@ -65,10 +65,10 @@ Fehler
 assign cpu_data_in[15:8] = (cpu_addr[1] == 1'b1) ? DAT_I[23:16] : DAT_I[7:0];
 assign cpu_data_in[7:0]  = (cpu_addr[1] == 1'b1) ? DAT_I[31:24] : DAT_I[15:8];
 
-assign DAT_O[31:24] = cpu_addr[1] == 1'b1 ? cpu_data_out[7:0]  : 16'hX;
-assign DAT_O[23:16] = cpu_addr[1] == 1'b1 ? cpu_data_out[15:8] : 16'hX;
-assign DAT_O[15:8]  = cpu_addr[1] == 1'b0 ? cpu_data_out[7:0]  : 16'hX;
-assign DAT_O[7:0]   = cpu_addr[1] == 1'b0 ? cpu_data_out[15:8] : 16'hX;
+assign DAT_O[31:24] = cpu_addr[1] == 1'b1 ? cpu_data_out[7:0]  : 8'hX;
+assign DAT_O[23:16] = cpu_addr[1] == 1'b1 ? cpu_data_out[15:8] : 8'hX;
+assign DAT_O[15:8]  = cpu_addr[1] == 1'b0 ? cpu_data_out[7:0]  : 8'hX;
+assign DAT_O[7:0]   = cpu_addr[1] == 1'b0 ? cpu_data_out[15:8] : 8'hX;
 
 assign SEL_O[3:2] = cpu_addr[1]==1'b1 ? { lds, uds } : 2'b00;
 assign SEL_O[1:0] = cpu_addr[1]==1'b0 ? { lds, uds } : 2'b00;
@@ -84,10 +84,10 @@ assign SEL_O[1:0] = cpu_addr[1]==1'b0 ? { lds, uds } : 2'b00;
 assign cpu_data_in[15:8] = (cpu_addr[1] == 1'b1) ? DAT_I[15:8] : DAT_I[31:24];
 assign cpu_data_in[7:0]  = (cpu_addr[1] == 1'b1) ? DAT_I[7:0] : DAT_I[23:16];
 
-assign DAT_O[31:24] = cpu_addr[1] == 1'b0 ? cpu_data_out[15:8]  : 16'hX;
-assign DAT_O[23:16] = cpu_addr[1] == 1'b0 ? cpu_data_out[7:0] : 16'hX;
-assign DAT_O[15:8]  = cpu_addr[1] == 1'b1 ? cpu_data_out[15:8]  : 16'hX;
-assign DAT_O[7:0]   = cpu_addr[1] == 1'b1 ? cpu_data_out[7:0] : 16'hX;
+assign DAT_O[31:24] = cpu_addr[1] == 1'b0 ? cpu_data_out[15:8]  : 8'hX;
+assign DAT_O[23:16] = cpu_addr[1] == 1'b0 ? cpu_data_out[7:0] : 8'hX;
+assign DAT_O[15:8]  = cpu_addr[1] == 1'b1 ? cpu_data_out[15:8]  : 8'hX;
+assign DAT_O[7:0]   = cpu_addr[1] == 1'b1 ? cpu_data_out[7:0] : 8'hX;
 
 assign SEL_O[3:2] = cpu_addr[1]==1'b0 ? { uds, lds } : 2'b00;
 assign SEL_O[1:0] = cpu_addr[1]==1'b1 ? { uds, lds } : 2'b00;

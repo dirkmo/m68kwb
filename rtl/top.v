@@ -32,14 +32,17 @@ wire [31:0] gpio_data_o;
 wire [15:0] gpio_ext_pad_output;
 wire [15:0] gpio_ext_pad_oe;
 
-wire [2:0] slave_select;
-wire [2:0] slave_ack;
+wire [31:0] ram_data_o;
+wire mem_ack;
 
-reg  [31:0] mem_data_o;
+wire [3:0] slave_select;
+wire [3:0] slave_ack;
+
+reg  [31:0] rom_data_o;
 `ifdef  LITTLE_ENDIAN
-wire [31:0] memory = { mem_data_o[7:0], mem_data_o[15:8], mem_data_o[23:16], mem_data_o[31:24] };
+wire [31:0] rom = { rom_data_o[7:0], rom_data_o[15:8], rom_data_o[23:16], rom_data_o[31:24] };
 `else
-wire [31:0] memory = mem_data_o[31:0];
+wire [31:0] rom = rom_data_o[31:0];
 `endif
 
 wire [31:0] uart_data_o;
@@ -51,14 +54,16 @@ assign WB_ACK = slave_ack != 'd0;
 assign leds[7:0] = gpio_ext_pad_output[7:0];
 
 assign cpu_data_in[31:0] =
-	slave_select == 'd1 ? memory[31:0] :
-	slave_select == 'd2 ? gpio_data_o[31:0] :
-	slave_select == 'd3 ? uart_data_o[31:0] :
+	slave_select == 'd1 ? rom[31:0] :
+	slave_select == 'd2 ? ram_data_o[31:0] :
+	slave_select == 'd3 ? gpio_data_o[31:0] :
+	slave_select == 'd4 ? uart_data_o[31:0] :
 	'dX;
 
 assign slave_ack = {
-	slave_select[2] & uart_ack,
-	slave_select[1] & gpio_ack,
+	slave_select[3] & uart_ack,
+	slave_select[2] & gpio_ack,
+	slave_select[1] & mem_ack,
 	slave_select[0] /*mem always ack*/
 };
 
@@ -102,7 +107,7 @@ gpio_top gpio(
 	.wb_dat_i( cpu_data_out ),
 	.wb_sel_i( WB_SEL ),
 	.wb_we_i( WB_WE ),
-	.wb_stb_i( slave_select[1] ),
+	.wb_stb_i( slave_select[2] ),
 	.wb_dat_o( gpio_data_o ),
 	.wb_ack_o( gpio_ack ),
 	.wb_err_o( gpio_err ),
@@ -123,7 +128,7 @@ uart_top uart(
 	.wb_dat_i( cpu_data_out ),
 	.wb_dat_o( uart_data_o ),
 	.wb_we_i( WB_WE),
-	.wb_stb_i( slave_select[2] ),
+	.wb_stb_i( slave_select[3] ),
 	.wb_cyc_i( WB_CYC ),
 	.wb_ack_o( uart_ack ),
 	.wb_sel_i( WB_SEL ),
@@ -143,11 +148,27 @@ uart_top uart(
 	.dcd_pad_i(1'b0)
 );
 
+`define MEMORY_ADDR_WIDTH 10
+
+memory #(.WIDTH(`MEMORY_ADDR_WIDTH)) mem0 (
+	.CLK_I( WB_CLK ),
+	.RST_I( WB_RST ),
+	.DAT_I( cpu_data_out ),
+	.DAT_O( ram_data_o ),
+	.ADR_I( cpu_addr[`MEMORY_ADDR_WIDTH-1:0] ),
+	.ACK_O( mem_ack ),
+	.CYC_I( WB_CYC ),
+	.STB_I( slave_select[1] ),
+	.SEL_I( WB_SEL ),
+	.ERR_O(),
+	.WE_I( WB_WE )
+);
+
 // Program memory
 always @(*) begin
 	case( { cpu_addr[31:0] }  )
 `include "../src/uart.v"
-		default: mem_data_o[31:0] = 32'h0;
+		default: rom_data_o[31:0] = 32'h0;
 	endcase
 end
 
@@ -159,7 +180,7 @@ always @(posedge clk_50mhz) begin
 	if( reset ) begin
 		counter <= 0;
 	end else begin
-		counter <= counter + 'd1;
+		counter <= counter + 3'd1;
 	end
 end
 /**/

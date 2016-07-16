@@ -1,26 +1,26 @@
     .global _start
 
 	.section .vectors,"a"
-stack:		.4byte 0x2000
+stack:		.4byte 0x101000
 reset:		.4byte _start
 
 	.text
 
-.equ		GPIO_IN,  0x100000
-.equ		GPIO_OUT, 0x100004
-.equ		GPIO_OE,  0x100008
+.equ		GPIO_IN,  0x200000
+.equ		GPIO_OUT, 0x200004
+.equ		GPIO_OE,  0x200008
 
-.equ		UART_RXBUF,		0x100100
-.equ		UART_TXBUF,		0x100100
-.equ		UART_INTEN,		0x100101
-.equ		UART_INTID,		0x100102
-.equ		UART_FIFOCTRL,	0x100102
-.equ		UART_LINECTRL,	0x100103
-.equ		UART_MODEMCTRL,	0x100104
-.equ		UART_LINESTAT,	0x100105
-.equ		UART_MODEMSTAT, 0x100106
-.equ		UART_DIVLAT1,	0x100100 /*clk div lsb, muss zuletzt geschrieben werden! */
-.equ		UART_DIVLAT2,	0x100101 /* clk div msb */
+.equ		UART_RXBUF,		0x200100
+.equ		UART_TXBUF,		0x200100
+.equ		UART_INTEN,		0x200101
+.equ		UART_INTID,		0x200102
+.equ		UART_FIFOCTRL,	0x200102
+.equ		UART_LINECTRL,	0x200103
+.equ		UART_MODEMCTRL,	0x200104
+.equ		UART_LINESTAT,	0x200105
+.equ		UART_MODEMSTAT, 0x200106
+.equ		UART_DIVLAT1,	0x200100 /*clk div lsb, muss zuletzt geschrieben werden! */
+.equ		UART_DIVLAT2,	0x200101 /* clk div msb */
 
 .equ		UART_DIVVAL1,   27 /* 50 MHz / (16*115200) = 27,13 */
 .equ		UART_DIVVAL2,	0
@@ -45,8 +45,8 @@ _start:
 			ORI.W  #0xF000, %SR
 			ANDI.W #0xF000, %SR
 
-			move.l #0x000000FF, GPIO_OE
-			move.l #0x000000FF, GPIO_OUT
+			/*move.l #0x000000FF, GPIO_OE
+			move.l #0x000000FF, GPIO_OUT */
 
 uart_init:	
 			/* enable access to divisor registers */
@@ -57,15 +57,18 @@ uart_init:
 			/* enable access to rx/tx buffers */
 			move.b #0x07, UART_LINECTRL /*8bit chars and 2 stop bits*/
 
-			movea.l	#msg, %a0
-hello:		move.b (%a0)+, %d0
-			tst.b %d0
-			beq.s loop
-			move.b %d0, UART_TXBUF
-			bra.s hello
-			
+			jsr hello
 
 loop:
 			jmp loop
+
+hello:		movea.l	#msg, %a0
+l:			move.b (%a0)+, %d0
+			tst.b %d0
+			beq.s loop
+			move.b %d0, UART_TXBUF
+			bra.s l
+			rts
+
 .data
 msg:		.asciz "Hallo Welt!\n"
