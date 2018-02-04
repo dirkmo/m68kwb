@@ -34,6 +34,11 @@ assign STB_O = CYC_O;
 wire decodeOPC;
 wire [15:0] cpu_data_in;
 
+// unaligned memory access not supported!
+// this will fail: move.w #0x1234, 0x1
+// TODO: trap/interrupt when unaligned access is performed
+
+
 // 68k Speicherorganisation: (68k ist big endian)
 //
 // 68k Signale						
@@ -52,28 +57,6 @@ wire [15:0] cpu_data_in;
 // Little	B3			B2			B1			B0
 
 
-`ifdef LITTLE_ENDIAN
-// funktioniert nicht richtig
-Fehler
-// Little Endian
-// DAT[]	31:24		23:16		15:8		7:0
-// SEL[]	4'b1000		4'b0100		4'b0010		4'b0001
-// Adresse	3			2			1			0
-// cpudata	[7:0]		[15:8]		[7:0]		[15:8]
-// ds		lds			uds			lds			uds
-
-assign cpu_data_in[15:8] = (cpu_addr[1] == 1'b1) ? DAT_I[23:16] : DAT_I[7:0];
-assign cpu_data_in[7:0]  = (cpu_addr[1] == 1'b1) ? DAT_I[31:24] : DAT_I[15:8];
-
-assign DAT_O[31:24] = cpu_addr[1] == 1'b1 ? cpu_data_out[7:0]  : 8'hX;
-assign DAT_O[23:16] = cpu_addr[1] == 1'b1 ? cpu_data_out[15:8] : 8'hX;
-assign DAT_O[15:8]  = cpu_addr[1] == 1'b0 ? cpu_data_out[7:0]  : 8'hX;
-assign DAT_O[7:0]   = cpu_addr[1] == 1'b0 ? cpu_data_out[15:8] : 8'hX;
-
-assign SEL_O[3:2] = cpu_addr[1]==1'b1 ? { lds, uds } : 2'b00;
-assign SEL_O[1:0] = cpu_addr[1]==1'b0 ? { lds, uds } : 2'b00;
-
-`else
 // Big Endian
 // DAT[]	31:24		23:16		15:8		7:0
 // SEL[]	4'b1000		4'b0100		4'b0010		4'b0001
@@ -91,8 +74,6 @@ assign DAT_O[7:0]   = cpu_addr[1] == 1'b1 ? cpu_data_out[7:0] : 8'hX;
 
 assign SEL_O[3:2] = cpu_addr[1]==1'b0 ? { uds, lds } : 2'b00;
 assign SEL_O[1:0] = cpu_addr[1]==1'b1 ? { uds, lds } : 2'b00;
-
-`endif
 
 
 assign ADR_O = { cpu_addr[31:2], 2'b00 }; // 32 bit bus granuality

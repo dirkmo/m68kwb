@@ -1,10 +1,9 @@
     .global _start
 
-	.section .vectors,"a"
-stack:		.4byte 0x101000
-reset:		.4byte _start
 
 	.text
+stack:		.4byte 0x100400
+reset:		.4byte _start
 
 .equ		GPIO_IN,  0x200000
 .equ		GPIO_OUT, 0x200004
@@ -45,8 +44,8 @@ _start:
 			ORI.W  #0xF000, %SR
 			ANDI.W #0xF000, %SR
 
-			/*move.l #0x000000FF, GPIO_OE
-			move.l #0x000000FF, GPIO_OUT */
+			move.l #0xFF, GPIO_OE
+			move.l #0x00, GPIO_OUT
 
 uart_init:	
 			/* enable access to divisor registers */
@@ -56,9 +55,25 @@ uart_init:
 			move.b #UART_DIVVAL1, UART_DIVLAT1
 			/* enable access to rx/tx buffers */
 			move.b #0x07, UART_LINECTRL /*8bit chars and 2 stop bits*/
+            
+            move.l #'A', UART_TXBUF
+wait:       
 
+            btst.b #1, UART_LINESTAT /* char received? */
+            beq wait
+            /*char received*/
+            move.b UART_RXBUF, %d0
+            addi.b #1, %d0
+            move.b %d0, UART_TXBUF
+            move.l %d0, GPIO_OUT
+            
+            jmp wait
+
+loop:       jmp loop
+
+
+/*
 			jsr hello
-
 loop:
 			jmp loop
 
@@ -72,3 +87,5 @@ l:			move.b (%a0)+, %d0
 
 .data
 msg:		.asciz "Hallo Welt!\n"
+*/
+

@@ -58,24 +58,27 @@ module memory(
 	always @(posedge CLK_I) begin
 		if( do_write && SEL_I[3] ) begin
 			memb3[ mem_addr ][7:0] <= DAT_I[31:24];
+			$display("memb3[%X] <= %02X", mem_addr, DAT_I[31:24]);
 		end
 	end
 	always @(posedge CLK_I) begin
 		if( do_write && SEL_I[2] ) begin
 			memb2[ mem_addr ][7:0] <= DAT_I[23:16];
+			$display("memb2[%X] <= %02X", mem_addr, DAT_I[23:16]);
 		end
 	end
 	always @(posedge CLK_I) begin
 		if( do_write && SEL_I[1] ) begin
 			memb1[ mem_addr ][7:0] <= DAT_I[15:8];
+			$display("memb1[%X] <= %02X", mem_addr, DAT_I[15:8]);
 		end
 	end
 	always @(posedge CLK_I) begin
 		if( do_write && SEL_I[0] ) begin
 			memb0[ mem_addr ][7:0] <= DAT_I[7:0];
+			$display("memb0[%X] <= %02X", mem_addr, DAT_I[7:0]);
 		end
 	end
-
 
 
 endmodule

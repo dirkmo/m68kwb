@@ -1,2 +1,1 @@
-`timescale 1ns / 1ps
-//`define LITTLE_ENDIAN
+`timescale 1ns / 10ps

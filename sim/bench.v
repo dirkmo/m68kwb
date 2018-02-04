@@ -2,19 +2,22 @@
 
 module bench();
 
-reg clk = 0;
+reg clk50mhz = 0;
 reg reset = 0;
 
-always #5 clk = ~clk;
+wire [7:0] leds;
+wire uart_tx;
+
+always #10 clk50mhz = ~clk50mhz;
 
 top uut(
-   .clk_50mhz(clk),
+   .clk_50mhz(clk50mhz),
    .reset(reset),
 
-   .uart_tx(),
-   .uart_rx(1'b1),
-		
-   .leds()
+   .uart_tx(uart_tx),
+   .uart_rx(uart_tx),
+
+   .leds(leds)
 );
 
 initial begin
@@ -22,7 +25,7 @@ initial begin
 	#100;
 	reset = 0;
 
-	#4000;
+	#5000;
 	$stop;
 end
 
