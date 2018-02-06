@@ -395,7 +395,7 @@ begin
 			end
 	sr_push :	begin
 ///////////////////////////////////////
-//				$display($time, ": received: %b", rf_data_in);
+				$display($time, ": received: %b", rf_data_in);
         if(srx_pad_i | break_error)
           begin
             if(break_error)

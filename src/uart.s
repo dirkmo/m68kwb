@@ -56,18 +56,24 @@ uart_init:
 			/* enable access to rx/tx buffers */
 			move.b #0x07, UART_LINECTRL /*8bit chars and 2 stop bits*/
             
-            move.l #'A', UART_TXBUF
+            move.b #'A', UART_TXBUF
+
+            move.b UART_LINECTRL, %d0
+            move.l %d0, GPIO_OUT
+
+
 wait:       
 
-            btst.b #1, UART_LINESTAT /* char received? */
+            btst.b #0, UART_LINESTAT
             beq wait
-            /*char received*/
             move.b UART_RXBUF, %d0
+
+            move.l %d0, GPIO_OUT
             addi.b #1, %d0
             move.b %d0, UART_TXBUF
-            move.l %d0, GPIO_OUT
             
             jmp wait
+
 
 loop:       jmp loop
 
