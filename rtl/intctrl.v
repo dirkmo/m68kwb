@@ -1,14 +1,14 @@
 `include "timescale.v"
 
 module interrupt_controller(
-	clk,
-	reset,
-	cs,
-	adr,
-	oe,
-	we,
-	data_i,
-	data_o,
+	wb_clk_i,
+	wb_reset_i,
+	wb_stb_i,
+	wb_adr_i,
+	wb_we_i,
+	wb_dat_i,
+	wb_dat_o,
+	wb_ack_o,
 	int1,
 	int2,
 	int3,
@@ -16,26 +16,24 @@ module interrupt_controller(
 	int5,
 	int6,
 	int7,
-	ack,
-	dtack,
+	int_ack,
 	ipl
 );
 
-input  clk;
-input  reset;
-input  cs;
-input  [3:0] adr;
-input  oe;
-input  we;
-input  [7:0] data_i;
-output [7:0] data_o;
+input  wb_clk_i;
+input  wb_reset_i;
+input  wb_stb_i;
+input  [3:0] wb_adr_i;
+input  wb_we_i;
+input  [7:0] wb_dat_i;
+output [7:0] wb_dat_o;
 input  int1, int2, int3, int4, int5, int6, int7;
-input  ack;
-output dtack;
+input  int_ack;
+output wb_ack_o;
 output [2:0] ipl;
 
-reg dtack = 1'b0;
-reg ack_r = 1'b0;
+reg wb_ack_o = 1'b0;
+reg int_ack_r = 1'b0;
 reg [7:0] data_r;
 reg [7:0] vectors [0:6];
 reg [2:0] irq_nr [0:6];
@@ -45,16 +43,17 @@ reg [6:0] ie_reg;
 reg [2:0] ipl_r, ipl_n;
 
 wire [2:0] int_no = (6 - ipl_r);
-wire assert_ack   = (ack && ~ack_r);
-wire deassert_ack = (ack_r && ~ack);
+wire assert_int_ack   = (int_ack && ~int_ack_r);
+wire deassert_int_ack = (int_ack_r && ~int_ack);
+wire oe = ~wb_we_i;
 
-wire [2:0] ix = adr[2:0];
-wire vectors_stb_we = (cs && we && adr[3] == 1'b0 && adr[2:0] != 3'b111 );
-wire vectors_stb_oe = (cs && oe && adr[3] == 1'b0 && adr[2:0] != 3'b111 );
-wire irq_stb_we     = (cs && we && adr[3] == 1'b1 && adr[2:0] != 3'b111 );
-wire irq_stb_oe     = (cs && oe && adr[3] == 1'b1 && adr[2:0] != 3'b111 );
-wire ier_stb_we     = (cs && we && adr == 4'b0111);
-wire ier_stb_oe     = (cs && oe && adr == 4'b0111);
+wire [2:0] ix = wb_adr_i[2:0];
+wire vectors_stb_we = (wb_stb_i && wb_we_i && wb_adr_i[3] == 1'b0 && wb_adr_i[2:0] != 3'b111 );
+wire vectors_stb_oe = (wb_stb_i && oe && wb_adr_i[3] == 1'b0 && wb_adr_i[2:0] != 3'b111 );
+wire irq_stb_we     = (wb_stb_i && wb_we_i && wb_adr_i[3] == 1'b1 && wb_adr_i[2:0] != 3'b111 );
+wire irq_stb_oe     = (wb_stb_i && oe && wb_adr_i[3] == 1'b1 && wb_adr_i[2:0] != 3'b111 );
+wire ier_stb_we     = (wb_stb_i && wb_we_i && wb_adr_i == 4'b0111);
+wire ier_stb_oe     = (wb_stb_i && oe && wb_adr_i == 4'b0111);
 
 reg int1_r, int2_r, int3_r, int4_r, int5_r, int6_r, int7_r;
 
@@ -83,8 +82,8 @@ begin
 	int_pending = 7'b0000000;
 	int_mask    = 7'b1111111;
 	ie_reg      = 7'b1111111;
-	ipl_r       = 3'b111;
-	dtack       = 1'b1;
+	ipl_r       = 3'b000;
+	wb_ack_o       = 1'b1;
 	int1_r      = 1'b0;
 	int2_r      = 1'b0;
 	int3_r      = 1'b0;
@@ -99,9 +98,9 @@ begin
 	end
 end
 
-always @(posedge clk)
+always @(posedge wb_clk_i)
 begin
-	if( reset )
+	if( wb_reset_i )
 	begin
 		int1_r <= 1'b0;
 		int2_r <= 1'b0;
@@ -121,41 +120,41 @@ begin
 	end
 end
 
-always @(posedge clk)
-	if( reset )
-		ack_r <= 1'b0;
+always @(posedge wb_clk_i)
+	if( wb_reset_i )
+		int_ack_r <= 1'b0;
 	else
-		ack_r <= ack;
+		int_ack_r <= int_ack;
 
-always @(posedge clk)
+always @(posedge wb_clk_i)
 begin
 	if( vectors_stb_we )
-		vectors[ix] = data_i;
+		vectors[ix] = wb_dat_i;
 end
 
-always @(posedge clk)
+always @(posedge wb_clk_i)
 begin
 	if( irq_stb_we )
-		irq_nr[ix]  = data_i;
+		irq_nr[ix]  = wb_dat_i;
 end
 
-always @(posedge clk)
+always @(posedge wb_clk_i)
 begin
-	if( reset )
+	if( wb_reset_i )
 		ie_reg      = 7'b1111111;
 	else if( ier_stb_we )
-		ie_reg      = data_i;
+		ie_reg      = wb_dat_i;
 end
 
-always @(posedge clk)
+always @(posedge wb_clk_i)
 begin
-	dtack = 1'b1;
-	if( ack )
+	wb_ack_o = 1'b1;
+	if( int_ack )
 	begin
-		if( assert_ack )
+		if( assert_int_ack )
 			data_r = vectors[int_no];
-		dtack  = (ipl_r == 3'b111);
-	end else if( cs ) begin
+		wb_ack_o  = (ipl_r == 3'b000);
+	end else if( wb_stb_i ) begin
 		if( vectors_stb_oe )
 			data_r = vectors[ix];
 		else if( irq_stb_oe )
@@ -164,14 +163,14 @@ begin
 			data_r = ie_reg;
 		else
 			data_r = 8'bZ;
-		dtack = 1'b0;
+		wb_ack_o = 1'b0;
 	end else
 		data_r = 8'bZ;
 end
 
-always @(posedge clk)
+always @(posedge wb_clk_i)
 begin
-	if( reset )
+	if( wb_reset_i )
 	begin
 		int_pending = 7'b0000000;
 	end else if( pos_edge_trigger ) begin
@@ -207,32 +206,32 @@ begin
 	end
 end
 
-always @(posedge clk)
+always @(posedge wb_clk_i)
 begin
-	if( deassert_ack || reset )
+	if( deassert_int_ack || wb_reset_i )
 	begin
-		ipl_r  = 3'b111;
-	end else if( ipl_r == 3'b111 ) begin
+		ipl_r  = 3'b000;
+	end else if( ipl_r == 3'b000 ) begin
 		if( int_pending[6] && int_mask[6] )
-			ipl_r     = ~irq_nr[6];
+			ipl_r     = irq_nr[6];
 		else if( int_pending[5] && int_mask[5] )
-			ipl_r     = ~irq_nr[5];
+			ipl_r     = irq_nr[5];
 		else if( int_pending[4] && int_mask[4] )
-			ipl_r     = ~irq_nr[4];
+			ipl_r     = irq_nr[4];
 		else if( int_pending[3] && int_mask[3] )
-			ipl_r     = ~irq_nr[3];
+			ipl_r     = irq_nr[3];
 		else if( int_pending[2] && int_mask[2] )
-			ipl_r     = ~irq_nr[2];
+			ipl_r     = irq_nr[2];
 		else if( int_pending[1] && int_mask[1] )
-			ipl_r     = ~irq_nr[1];
+			ipl_r     = irq_nr[1];
 		else if( int_pending[0] && int_mask[0] )
-			ipl_r     = ~irq_nr[0];
+			ipl_r     = irq_nr[0];
 	end
 end
 
-always @(posedge clk)
+always @(posedge wb_clk_i)
 begin
-	if( reset )
+	if( wb_reset_i )
 		int_mask = 7'b1111111;
 	else if ( !pos_edge_trigger && !neg_edge_trigger )
 		casex(int_pending)
@@ -247,7 +246,7 @@ begin
 		endcase
 end
 
-assign data_o = data_r;
+assign wb_dat_o = data_r;
 
 assign ipl = ipl_r;
 

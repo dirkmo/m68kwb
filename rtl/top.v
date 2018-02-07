@@ -25,6 +25,7 @@ wire cpu_clk;
 wire [31:0] cpu_addr;
 wire [31:0] cpu_data_out;
 wire [31:0] cpu_data_in;
+wire  [2:0] ipl;
 
 wire gpio_ack;
 wire gpio_err;
@@ -39,15 +40,16 @@ wire [31:0] uart_data_o;
 wire uart_ack;
 wire uart_int;
 
+wire intctrl_ack;
+wire [31:0] intctrl_data_o;
 
 wire [31:0] ram_data_o;
 wire mem_ack;
 
-wire [3:0] slave_select;
-wire [3:0] slave_ack;
+wire [4:0] slave_select;
+wire [4:0] slave_ack;
 
 reg  [31:0] rom_data_o;
-
 wire [31:0] rom = rom_data_o[31:0];
 
 
@@ -55,17 +57,25 @@ assign WB_ACK = slave_ack != 'd0;
 
 
 assign cpu_data_in[31:0] =
-	slave_select == 'd1 ? rom[31:0] :
-	slave_select == 'd2 ? ram_data_o[31:0] :
-	slave_select == 'd4 ? gpio_data_o[31:0] :
-	slave_select == 'd8 ? uart_data_o[31:0] :
+	slave_select == 'h1 ? rom[31:0] :
+	slave_select == 'h2 ? ram_data_o[31:0] :
+	slave_select == 'h4 ? gpio_data_o[31:0] :
+	slave_select == 'h8 ? uart_data_o[31:0] :
+	slave_select == 'h10 ? intctrl_data_o[31:0] :
 	'dX;
 
+wire     rom_sel = slave_select[0];
+wire     ram_sel = slave_select[1];
+wire    gpio_sel = slave_select[2];
+wire    uart_sel = slave_select[3];
+wire intctrl_sel = slave_select[4];
+
 assign slave_ack = {
-	slave_select[3] & uart_ack,
-	slave_select[2] & gpio_ack,
-	slave_select[1] & mem_ack,
-	slave_select[0] /*mem always ack*/
+	intctrl_sel & intctrl_ack,
+	   uart_sel & uart_ack,
+	   gpio_sel & gpio_ack,
+	    ram_sel & mem_ack,
+	    rom_sel /*rom always ack*/
 };
 
 
@@ -99,7 +109,7 @@ TG68_wb cpu(
 	.ERR_I( 1'b0 ),
 	.WE_O( WB_WE ),
 
-	.ipl_i( 3'd0 ),
+	.ipl_i( ipl[2:0] ),
 	.cpu_clk(cpu_clk)
 );
 
@@ -185,21 +195,32 @@ memory #(.WIDTH(`MEMORY_ADDR_WIDTH)) mem0 (
 // Program memory
 always @(*) begin
 	case( { cpu_addr[31:0] }  )
-`include "src/uart.v"
+`include "src/int.v"
 		default: rom_data_o[31:0] = 32'h0;
 	endcase
 end
 
+interrupt_controller intctrl(
+	.wb_clk_i(WB_CLK),
+	.wb_reset_i(WB_RST),
+	.wb_stb_i(intctrl_stb),
+	.wb_adr_i(cpu_addr[3:0] ),
+	.wb_we_i(WB_WE),
+	.wb_dat_i(cpu_data_out),
+	.wb_dat_o(intctrl_data_o),
+	.wb_ack_o(intctrl_ack),
+	.int1(gpio_inta),
+	.int2(uart_int),
+	.int3(),
+	.int4(),
+	.int5(),
+	.int6(),
+	.int7(),
+	.int_ack(1'b0),
+	.ipl(ipl[2:0])
+);
+
+
 assign cpu_clk = clk_50mhz;
-/*
-reg [2:0] counter = 0;
-assign cpu_clk = counter[0];
-always @(posedge clk_50mhz) begin
-	if( reset ) begin
-		counter <= 0;
-	end else begin
-		counter <= counter + 3'd1;
-	end
-end
-/**/
+
 endmodule
