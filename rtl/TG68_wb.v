@@ -23,7 +23,10 @@ module TG68_wb(
 wire [31:0] cpu_addr;
 wire [15:0] cpu_data_out;
 wire [1:0] state_out;
-wire cpu_clk_en = (state_out[1:0] == 2'b01) ? 1'b1 : ACK_I;
+
+reg ACK_r;
+always @(negedge CLK_I) ACK_r <= ACK_I;
+wire cpu_clk_en = (state_out[1:0] == 2'b01) ? 1'b1 : ACK_r; //ACK_I
 wire uds_n, uds;
 wire lds_n, lds;
 wire wr_n;

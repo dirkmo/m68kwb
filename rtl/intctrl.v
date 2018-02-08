@@ -9,6 +9,7 @@ module interrupt_controller(
 	wb_dat_i,
 	wb_dat_o,
 	wb_ack_o,
+	wb_sel_i,
 	int1,
 	int2,
 	int3,
@@ -30,7 +31,15 @@ output [7:0] wb_dat_o;
 input  int1, int2, int3, int4, int5, int6, int7;
 input  int_ack;
 output wb_ack_o;
+input  [3:0] wb_sel_i;
 output [2:0] ipl;
+
+wire [3:0] adr;
+
+assign adr[3:0] = wb_sel_i[3] ? { wb_adr_i[3:2], 2'b00 } :
+				  wb_sel_i[2] ? { wb_adr_i[3:2], 2'b01 } :
+				  wb_sel_i[1] ? { wb_adr_i[3:2], 2'b10 } :
+				                { wb_adr_i[3:2], 2'b11 };
 
 reg wb_ack_o = 1'b0;
 reg int_ack_r = 1'b0;
@@ -47,13 +56,19 @@ wire assert_int_ack   = (int_ack && ~int_ack_r);
 wire deassert_int_ack = (int_ack_r && ~int_ack);
 wire oe = ~wb_we_i;
 
-wire [2:0] ix = wb_adr_i[2:0];
-wire vectors_stb_we = (wb_stb_i && wb_we_i && wb_adr_i[3] == 1'b0 && wb_adr_i[2:0] != 3'b111 );
-wire vectors_stb_oe = (wb_stb_i && oe && wb_adr_i[3] == 1'b0 && wb_adr_i[2:0] != 3'b111 );
-wire irq_stb_we     = (wb_stb_i && wb_we_i && wb_adr_i[3] == 1'b1 && wb_adr_i[2:0] != 3'b111 );
-wire irq_stb_oe     = (wb_stb_i && oe && wb_adr_i[3] == 1'b1 && wb_adr_i[2:0] != 3'b111 );
-wire ier_stb_we     = (wb_stb_i && wb_we_i && wb_adr_i == 4'b0111);
-wire ier_stb_oe     = (wb_stb_i && oe && wb_adr_i == 4'b0111);
+wire [2:0] ix = adr[2:0];
+
+// addr = 0 .. 6
+wire vectors_stb_we = (wb_stb_i && wb_we_i && adr[3] == 1'b0 && adr[2:0] != 3'b111 );
+wire vectors_stb_oe = (wb_stb_i && oe && adr[3] == 1'b0 && adr[2:0] != 3'b111 );
+
+// addr = 8 .. 14: IRQ
+wire irq_stb_we     = (wb_stb_i && wb_we_i && adr[3] == 1'b1 && adr[2:0] != 3'b111 );
+wire irq_stb_oe     = (wb_stb_i && oe && adr[3] == 1'b1 && adr[2:0] != 3'b111 );
+
+// addr = 7: IER register
+wire ier_stb_we     = (wb_stb_i && wb_we_i && adr == 4'b0111);
+wire ier_stb_oe     = (wb_stb_i && oe && adr == 4'b0111);
 
 reg int1_r, int2_r, int3_r, int4_r, int5_r, int6_r, int7_r;
 
@@ -83,7 +98,7 @@ begin
 	int_mask    = 7'b1111111;
 	ie_reg      = 7'b1111111;
 	ipl_r       = 3'b000;
-	wb_ack_o       = 1'b1;
+	wb_ack_o       = 1'b0;
 	int1_r      = 1'b0;
 	int2_r      = 1'b0;
 	int3_r      = 1'b0;
@@ -148,12 +163,12 @@ end
 
 always @(posedge wb_clk_i)
 begin
-	wb_ack_o = 1'b1;
+	wb_ack_o = 1'b0;
 	if( int_ack )
 	begin
 		if( assert_int_ack )
 			data_r = vectors[int_no];
-		wb_ack_o  = (ipl_r == 3'b000);
+		wb_ack_o  = ~(ipl_r == 3'b000);
 	end else if( wb_stb_i ) begin
 		if( vectors_stb_oe )
 			data_r = vectors[ix];
@@ -163,7 +178,7 @@ begin
 			data_r = ie_reg;
 		else
 			data_r = 8'bZ;
-		wb_ack_o = 1'b0;
+		wb_ack_o = 1'b1;
 	end else
 		data_r = 8'bZ;
 end

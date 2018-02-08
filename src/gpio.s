@@ -1,7 +1,7 @@
     .global _start
 
 	.section .vectors,"a"
-stack:		.4byte 0x2000
+stack:		.4byte 0x100400
 reset:		.4byte _start
 
 	.text

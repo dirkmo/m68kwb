@@ -17,8 +17,7 @@ top uut(
    .uart_tx(uart_tx),
    .uart_rx(uart_tx),
 
-   .gpo(gpio[7:1]),
-   .gpi(gpio[1])
+   .leds(gpio[7:0])
 );
 
 initial begin

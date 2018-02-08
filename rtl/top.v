@@ -135,7 +135,7 @@ gpio_top gpio(
 	.wb_dat_i( cpu_data_out ),
 	.wb_sel_i( WB_SEL ),
 	.wb_we_i( WB_WE ),
-	.wb_stb_i( slave_select[2] ),
+	.wb_stb_i( gpio_sel ),
 	.wb_dat_o( gpio_data_o ),
 	.wb_ack_o( gpio_ack ),
 	.wb_err_o( gpio_err ),
@@ -156,7 +156,7 @@ uart_top uart(
 	.wb_dat_i( cpu_data_out ),
 	.wb_dat_o( uart_data_o ),
 	.wb_we_i( WB_WE),
-	.wb_stb_i( slave_select[3] ),
+	.wb_stb_i( uart_sel ),
 	.wb_cyc_i( WB_CYC ),
 	.wb_ack_o( uart_ack ),
 	.wb_sel_i( WB_SEL ),
@@ -186,7 +186,7 @@ memory #(.WIDTH(`MEMORY_ADDR_WIDTH)) mem0 (
 	.ADR_I( cpu_addr[`MEMORY_ADDR_WIDTH-1:0] ),
 	.ACK_O( mem_ack ),
 	.CYC_I( WB_CYC ),
-	.STB_I( slave_select[1] ),
+	.STB_I( ram_sel ),
 	.SEL_I( WB_SEL ),
 	.ERR_O(),
 	.WE_I( WB_WE )
@@ -195,7 +195,7 @@ memory #(.WIDTH(`MEMORY_ADDR_WIDTH)) mem0 (
 // Program memory
 always @(*) begin
 	case( { cpu_addr[31:0] }  )
-`include "src/int.v"
+`include "src/debug.v"
 		default: rom_data_o[31:0] = 32'h0;
 	endcase
 end
@@ -203,12 +203,13 @@ end
 interrupt_controller intctrl(
 	.wb_clk_i(WB_CLK),
 	.wb_reset_i(WB_RST),
-	.wb_stb_i(intctrl_stb),
+	.wb_stb_i(intctrl_sel),
 	.wb_adr_i(cpu_addr[3:0] ),
 	.wb_we_i(WB_WE),
 	.wb_dat_i(cpu_data_out),
 	.wb_dat_o(intctrl_data_o),
 	.wb_ack_o(intctrl_ack),
+	.wb_sel_i(WB_SEL),
 	.int1(gpio_inta),
 	.int2(uart_int),
 	.int3(),
