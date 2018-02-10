@@ -17,7 +17,8 @@ module TG68_wb(
 	output wire WE_O,
 
 	input [2:0] ipl_i, // high active!
-	input cpu_clk
+	input cpu_clk,
+	output wire int_ack
 );
 
 wire [31:0] cpu_addr;
@@ -36,6 +37,8 @@ assign CYC_O = uds || lds;
 assign STB_O = CYC_O;
 wire decodeOPC;
 wire [15:0] cpu_data_in;
+
+assign int_ack = (state_out[1:0] == 2'b10) && (cpu_addr[31:4] == 28'hFFFFFFF);
 
 // unaligned memory access not supported!
 // this will fail: move.w #0x1234, 0x1

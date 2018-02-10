@@ -26,8 +26,8 @@ input  wb_reset_i;
 input  wb_stb_i;
 input  [3:0] wb_adr_i;
 input  wb_we_i;
-input  [7:0] wb_dat_i;
-output [7:0] wb_dat_o;
+input  [31:0] wb_dat_i;
+output [31:0] wb_dat_o;
 input  int1, int2, int3, int4, int5, int6, int7;
 input  int_ack;
 output wb_ack_o;
@@ -41,6 +41,14 @@ assign adr[3:0] = wb_sel_i[3] ? { wb_adr_i[3:2], 2'b00 } :
 				  wb_sel_i[1] ? { wb_adr_i[3:2], 2'b10 } :
 				                { wb_adr_i[3:2], 2'b11 };
 
+wire [7:0] dati8 = wb_sel_i[3] ? wb_dat_i[31:24] :
+                   wb_sel_i[2] ? wb_dat_i[23:16] :
+				   wb_sel_i[1] ? wb_dat_i[15:8] :
+				                 wb_dat_i[7:0];
+
+wire [7:0] dato8;
+assign wb_dat_o[31:0] = { dato8[7:0], dato8[7:0], dato8[7:0], dato8[7:0] };
+
 reg wb_ack_o = 1'b0;
 reg int_ack_r = 1'b0;
 reg [7:0] data_r;
@@ -49,7 +57,7 @@ reg [2:0] irq_nr [0:6];
 reg [6:0] int_mask;
 reg [6:0] int_pending;
 reg [6:0] ie_reg;
-reg [2:0] ipl_r, ipl_n;
+reg [2:0] ipl_r;
 
 wire [2:0] int_no = (6 - ipl_r);
 wire assert_int_ack   = (int_ack && ~int_ack_r);
@@ -144,13 +152,13 @@ always @(posedge wb_clk_i)
 always @(posedge wb_clk_i)
 begin
 	if( vectors_stb_we )
-		vectors[ix] = wb_dat_i;
+		vectors[ix] = dati8;
 end
 
 always @(posedge wb_clk_i)
 begin
 	if( irq_stb_we )
-		irq_nr[ix]  = wb_dat_i;
+		irq_nr[ix]  = dati8;
 end
 
 always @(posedge wb_clk_i)
@@ -158,7 +166,7 @@ begin
 	if( wb_reset_i )
 		ie_reg      = 7'b1111111;
 	else if( ier_stb_we )
-		ie_reg      = wb_dat_i;
+		ie_reg      = dati8[6:0];
 end
 
 always @(posedge wb_clk_i)
@@ -175,7 +183,7 @@ begin
 		else if( irq_stb_oe )
 			data_r = irq_nr[ix];
 		else if( ier_stb_oe )
-			data_r = ie_reg;
+			data_r = { 1'b0, ie_reg[6:0] };
 		else
 			data_r = 8'bZ;
 		wb_ack_o = 1'b1;
@@ -261,7 +269,7 @@ begin
 		endcase
 end
 
-assign wb_dat_o = data_r;
+assign dato8 = data_r;
 
 assign ipl = ipl_r;
 

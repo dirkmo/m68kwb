@@ -55,12 +55,13 @@ wire [31:0] rom = rom_data_o[31:0];
 
 assign WB_ACK = slave_ack != 'd0;
 
+wire int_ack; // interrupt ack by cpu
 
 assign cpu_data_in[31:0] =
-	slave_select == 'h1 ? rom[31:0] :
-	slave_select == 'h2 ? ram_data_o[31:0] :
-	slave_select == 'h4 ? gpio_data_o[31:0] :
-	slave_select == 'h8 ? uart_data_o[31:0] :
+	slave_select == 'h1  ? rom[31:0] :
+	slave_select == 'h2  ? ram_data_o[31:0] :
+	slave_select == 'h4  ? gpio_data_o[31:0] :
+	slave_select == 'h8  ? uart_data_o[31:0] :
 	slave_select == 'h10 ? intctrl_data_o[31:0] :
 	'dX;
 
@@ -110,18 +111,18 @@ TG68_wb cpu(
 	.WE_O( WB_WE ),
 
 	.ipl_i( ipl[2:0] ),
-	.cpu_clk(cpu_clk)
+	.cpu_clk(cpu_clk),
+	.int_ack(int_ack)
 );
 
 SYSCON syscon(
 	.clk(clk_50mhz),
 	.reset(reset),
-
+	.int_ack(int_ack),
 	.CLK_O( WB_CLK ),
 	.RST_O( WB_RST ),
 	.ADR_I( cpu_addr ),
 	.STB_I( WB_STB ),
-
 	.STB_O( slave_select ),
 	.ERR_O( WB_ERR )
 );
@@ -195,7 +196,7 @@ memory #(.WIDTH(`MEMORY_ADDR_WIDTH)) mem0 (
 // Program memory
 always @(*) begin
 	case( { cpu_addr[31:0] }  )
-`include "src/debug.v"
+`include "src/int.v"
 		default: rom_data_o[31:0] = 32'h0;
 	endcase
 end
@@ -212,12 +213,12 @@ interrupt_controller intctrl(
 	.wb_sel_i(WB_SEL),
 	.int1(gpio_inta),
 	.int2(uart_int),
-	.int3(),
-	.int4(),
-	.int5(),
-	.int6(),
-	.int7(),
-	.int_ack(1'b0),
+	.int3(1'b0),
+	.int4(1'b0),
+	.int5(1'b0),
+	.int6(1'b0),
+	.int7(1'b0),
+	.int_ack(int_ack),
 	.ipl(ipl[2:0])
 );
 
