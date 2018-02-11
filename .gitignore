@@ -1,2 +1,6 @@
 host/bin2verilog
 *.bak
+*.o
+*.bin
+*.dis
+*.prj
