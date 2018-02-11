@@ -17,17 +17,13 @@ module TG68_wb(
 	output wire WE_O,
 
 	input [2:0] ipl_i, // high active!
-	input cpu_clk,
-	output wire int_ack
+	input cpu_clk
 );
 
 wire [31:0] cpu_addr;
 wire [15:0] cpu_data_out;
+wire [15:0] cpu_data_in;
 wire [1:0] state_out;
-
-reg ACK_r;
-always @(negedge CLK_I) ACK_r <= ACK_I;
-wire cpu_clk_en = (state_out[1:0] == 2'b01) ? 1'b1 : ACK_r; //ACK_I
 wire uds_n, uds;
 wire lds_n, lds;
 wire wr_n;
@@ -35,10 +31,15 @@ assign uds = ~uds_n;
 assign lds = ~lds_n;
 assign CYC_O = uds || lds;
 assign STB_O = CYC_O;
-wire decodeOPC;
-wire [15:0] cpu_data_in;
+
+reg ACK_r;
+always @(negedge CLK_I) ACK_r <= ACK_I;
 
 assign int_ack = (state_out[1:0] == 2'b10) && (cpu_addr[31:4] == 28'hFFFFFFF);
+
+wire cpu_clk_en = (state_out[1:0] == 2'b01) ? 1'b1 : 
+				                 (int_ack ) ? 1'b1 :
+				                              ACK_r; //ACK_I
 
 // unaligned memory access not supported!
 // this will fail: move.w #0x1234, 0x1
@@ -97,7 +98,7 @@ TG68_fast cpu (
 	.UDS( uds_n ), 
 	.LDS( lds_n ), 
 	.wr( wr_n ),
-	.decodeOPC( decodeOPC ),
+	.decodeOPC(),
 	.test_IPL(1'b0)
 );
 

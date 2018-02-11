@@ -40,14 +40,11 @@ wire [31:0] uart_data_o;
 wire uart_ack;
 wire uart_int;
 
-wire intctrl_ack;
-wire [31:0] intctrl_data_o;
-
 wire [31:0] ram_data_o;
 wire mem_ack;
 
-wire [4:0] slave_select;
-wire [4:0] slave_ack;
+wire [3:0] slave_select;
+wire [3:0] slave_ack;
 
 reg  [31:0] rom_data_o;
 wire [31:0] rom = rom_data_o[31:0];
@@ -55,24 +52,19 @@ wire [31:0] rom = rom_data_o[31:0];
 
 assign WB_ACK = slave_ack != 'd0;
 
-wire int_ack; // interrupt ack by cpu
-
 assign cpu_data_in[31:0] =
 	slave_select == 'h1  ? rom[31:0] :
 	slave_select == 'h2  ? ram_data_o[31:0] :
 	slave_select == 'h4  ? gpio_data_o[31:0] :
 	slave_select == 'h8  ? uart_data_o[31:0] :
-	slave_select == 'h10 ? intctrl_data_o[31:0] :
 	'dX;
 
 wire     rom_sel = slave_select[0];
 wire     ram_sel = slave_select[1];
 wire    gpio_sel = slave_select[2];
 wire    uart_sel = slave_select[3];
-wire intctrl_sel = slave_select[4];
 
 assign slave_ack = {
-	intctrl_sel & intctrl_ack,
 	   uart_sel & uart_ack,
 	   gpio_sel & gpio_ack,
 	    ram_sel & mem_ack,
@@ -111,14 +103,12 @@ TG68_wb cpu(
 	.WE_O( WB_WE ),
 
 	.ipl_i( ipl[2:0] ),
-	.cpu_clk(cpu_clk),
-	.int_ack(int_ack)
+	.cpu_clk(cpu_clk)
 );
 
-SYSCON syscon(
+SYSCON #(.SLAVES(4)) syscon(
 	.clk(clk_50mhz),
 	.reset(reset),
-	.int_ack(int_ack),
 	.CLK_O( WB_CLK ),
 	.RST_O( WB_RST ),
 	.ADR_I( cpu_addr ),
@@ -177,7 +167,7 @@ uart_top uart(
 	.dcd_pad_i(1'b0)
 );
 
-`define MEMORY_ADDR_WIDTH 10
+`define MEMORY_ADDR_WIDTH 4
 
 memory #(.WIDTH(`MEMORY_ADDR_WIDTH)) mem0 (
 	.CLK_I( WB_CLK ),
@@ -201,24 +191,12 @@ always @(*) begin
 	endcase
 end
 
+reg test_int = 1'b0;
+
 interrupt_controller intctrl(
 	.wb_clk_i(WB_CLK),
 	.wb_reset_i(WB_RST),
-	.wb_stb_i(intctrl_sel),
-	.wb_adr_i(cpu_addr[3:0] ),
-	.wb_we_i(WB_WE),
-	.wb_dat_i(cpu_data_out),
-	.wb_dat_o(intctrl_data_o),
-	.wb_ack_o(intctrl_ack),
-	.wb_sel_i(WB_SEL),
-	.int1(gpio_inta),
-	.int2(uart_int),
-	.int3(1'b0),
-	.int4(1'b0),
-	.int5(1'b0),
-	.int6(1'b0),
-	.int7(1'b0),
-	.int_ack(int_ack),
+	.int_i( { 4'b0000, test_int, uart_int, gpio_inta }),
 	.ipl(ipl[2:0])
 );
 

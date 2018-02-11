@@ -3,273 +3,65 @@
 module interrupt_controller(
 	wb_clk_i,
 	wb_reset_i,
-	wb_stb_i,
-	wb_adr_i,
-	wb_we_i,
-	wb_dat_i,
-	wb_dat_o,
-	wb_ack_o,
-	wb_sel_i,
-	int1,
-	int2,
-	int3,
-	int4,
-	int5,
-	int6,
-	int7,
-	int_ack,
+	int_i,
 	ipl
 );
 
 input  wb_clk_i;
 input  wb_reset_i;
-input  wb_stb_i;
-input  [3:0] wb_adr_i;
-input  wb_we_i;
-input  [31:0] wb_dat_i;
-output [31:0] wb_dat_o;
-input  int1, int2, int3, int4, int5, int6, int7;
-input  int_ack;
-output wb_ack_o;
-input  [3:0] wb_sel_i;
+input [6:0] int_i;
 output [2:0] ipl;
 
-wire [3:0] adr;
-
-assign adr[3:0] = wb_sel_i[3] ? { wb_adr_i[3:2], 2'b00 } :
-				  wb_sel_i[2] ? { wb_adr_i[3:2], 2'b01 } :
-				  wb_sel_i[1] ? { wb_adr_i[3:2], 2'b10 } :
-				                { wb_adr_i[3:2], 2'b11 };
-
-wire [7:0] dati8 = wb_sel_i[3] ? wb_dat_i[31:24] :
-                   wb_sel_i[2] ? wb_dat_i[23:16] :
-				   wb_sel_i[1] ? wb_dat_i[15:8] :
-				                 wb_dat_i[7:0];
-
-wire [7:0] dato8;
-assign wb_dat_o[31:0] = { dato8[7:0], dato8[7:0], dato8[7:0], dato8[7:0] };
-
-reg wb_ack_o = 1'b0;
-reg int_ack_r = 1'b0;
-reg [7:0] data_r;
-reg [7:0] vectors [0:6];
-reg [2:0] irq_nr [0:6];
-reg [6:0] int_mask;
-reg [6:0] int_pending;
-reg [6:0] ie_reg;
 reg [2:0] ipl_r;
 
-wire [2:0] int_no = (6 - ipl_r);
-wire assert_int_ack   = (int_ack && ~int_ack_r);
-wire deassert_int_ack = (int_ack_r && ~int_ack);
-wire oe = ~wb_we_i;
+reg [6:0] int_r;
 
-wire [2:0] ix = adr[2:0];
+wire [6:0] int_on = (~int_r) & int_i;
+wire [6:0] int_of = ((int_r) & (~int_i));
 
-// addr = 0 .. 6
-wire vectors_stb_we = (wb_stb_i && wb_we_i && adr[3] == 1'b0 && adr[2:0] != 3'b111 );
-wire vectors_stb_oe = (wb_stb_i && oe && adr[3] == 1'b0 && adr[2:0] != 3'b111 );
-
-// addr = 8 .. 14: IRQ
-wire irq_stb_we     = (wb_stb_i && wb_we_i && adr[3] == 1'b1 && adr[2:0] != 3'b111 );
-wire irq_stb_oe     = (wb_stb_i && oe && adr[3] == 1'b1 && adr[2:0] != 3'b111 );
-
-// addr = 7: IER register
-wire ier_stb_we     = (wb_stb_i && wb_we_i && adr == 4'b0111);
-wire ier_stb_oe     = (wb_stb_i && oe && adr == 4'b0111);
-
-reg int1_r, int2_r, int3_r, int4_r, int5_r, int6_r, int7_r;
-
-wire int1_on = (int1_r == 1'b0 && int1);
-wire int2_on = (int2_r == 1'b0 && int2);
-wire int3_on = (int3_r == 1'b0 && int3);
-wire int4_on = (int4_r == 1'b0 && int4);
-wire int5_on = (int5_r == 1'b0 && int5);
-wire int6_on = (int6_r == 1'b0 && int6);
-wire int7_on = (int7_r == 1'b0 && int7);
-wire int1_of = (int1_r == 1'b1 && !int1);
-wire int2_of = (int2_r == 1'b1 && !int2);
-wire int3_of = (int3_r == 1'b1 && !int3);
-wire int4_of = (int4_r == 1'b1 && !int4);
-wire int5_of = (int5_r == 1'b1 && !int5);
-wire int6_of = (int6_r == 1'b1 && !int6);
-wire int7_of = (int7_r == 1'b1 && !int7);
-
-wire pos_edge_trigger = (int1_on || int2_on || int3_on || int4_on || int5_on || int6_on || int7_on );
-wire neg_edge_trigger = (int1_of || int2_of || int3_of || int4_of || int5_of || int6_of || int7_of );
-
-integer i;
+wire pos_edge_trigger = int_on != 'h0;
+wire neg_edge_trigger = int_of != 'h0;
 
 initial
 begin
-	int_pending = 7'b0000000;
-	int_mask    = 7'b1111111;
-	ie_reg      = 7'b1111111;
-	ipl_r       = 3'b000;
-	wb_ack_o       = 1'b0;
-	int1_r      = 1'b0;
-	int2_r      = 1'b0;
-	int3_r      = 1'b0;
-	int4_r      = 1'b0;
-	int5_r      = 1'b0;
-	int6_r      = 1'b0;
-	int7_r      = 1'b0;
-	for(i=0;i<7;i=i+1)
-	begin
-		vectors[i] = 25 + i;
-		irq_nr[i]  = i;
-	end
+	ipl_r = 'h0;
+	int_r = 'h0;
 end
 
 always @(posedge wb_clk_i)
 begin
 	if( wb_reset_i )
 	begin
-		int1_r <= 1'b0;
-		int2_r <= 1'b0;
-		int3_r <= 1'b0;
-		int4_r <= 1'b0;
-		int5_r <= 1'b0;
-		int6_r <= 1'b0;
-		int7_r <= 1'b0;
+		int_r <= 'h0;
 	end else begin
-		int1_r <= int1;
-		int2_r <= int2;
-		int3_r <= int3;
-		int4_r <= int4;
-		int5_r <= int5;
-		int6_r <= int6;
-		int7_r <= int7;
-	end
-end
-
-always @(posedge wb_clk_i)
-	if( wb_reset_i )
-		int_ack_r <= 1'b0;
-	else
-		int_ack_r <= int_ack;
-
-always @(posedge wb_clk_i)
-begin
-	if( vectors_stb_we )
-		vectors[ix] = dati8;
-end
-
-always @(posedge wb_clk_i)
-begin
-	if( irq_stb_we )
-		irq_nr[ix]  = dati8;
-end
-
-always @(posedge wb_clk_i)
-begin
-	if( wb_reset_i )
-		ie_reg      = 7'b1111111;
-	else if( ier_stb_we )
-		ie_reg      = dati8[6:0];
-end
-
-always @(posedge wb_clk_i)
-begin
-	wb_ack_o = 1'b0;
-	if( int_ack )
-	begin
-		if( assert_int_ack )
-			data_r = vectors[int_no];
-		wb_ack_o  = ~(ipl_r == 3'b000);
-	end else if( wb_stb_i ) begin
-		if( vectors_stb_oe )
-			data_r = vectors[ix];
-		else if( irq_stb_oe )
-			data_r = irq_nr[ix];
-		else if( ier_stb_oe )
-			data_r = { 1'b0, ie_reg[6:0] };
-		else
-			data_r = 8'bZ;
-		wb_ack_o = 1'b1;
-	end else
-		data_r = 8'bZ;
-end
-
-always @(posedge wb_clk_i)
-begin
-	if( wb_reset_i )
-	begin
-		int_pending = 7'b0000000;
-	end else if( pos_edge_trigger ) begin
-		if(int7 && ie_reg[6])
-			int_pending[6] = 1;
-		else if(int6 && ie_reg[5])
-			int_pending[5] = 1;
-		else if(int5 && ie_reg[4])
-			int_pending[4] = 1;
-		else if(int4 && ie_reg[3])
-			int_pending[3] = 1;
-		else if(int3 && ie_reg[2])
-			int_pending[2] = 1;
-		else if(int2 && ie_reg[1])
-			int_pending[1] = 1;
-		else if(int1 && ie_reg[0])
-			int_pending[0] = 1;
-	end else if( neg_edge_trigger ) begin
-		if(!int7)
-			int_pending[6] = 0;
-		if(!int6)
-			int_pending[5] = 0;
-		if(!int5)
-			int_pending[4] = 0;
-		if(!int4)
-			int_pending[3] = 0;
-		if(!int3)
-			int_pending[2] = 0;
-		if(!int2)
-			int_pending[1] = 0;
-		if(!int1)
-			int_pending[0] = 0;
-	end
-end
-
-always @(posedge wb_clk_i)
-begin
-	if( deassert_int_ack || wb_reset_i )
-	begin
-		ipl_r  = 3'b000;
-	end else if( ipl_r == 3'b000 ) begin
-		if( int_pending[6] && int_mask[6] )
-			ipl_r     = irq_nr[6];
-		else if( int_pending[5] && int_mask[5] )
-			ipl_r     = irq_nr[5];
-		else if( int_pending[4] && int_mask[4] )
-			ipl_r     = irq_nr[4];
-		else if( int_pending[3] && int_mask[3] )
-			ipl_r     = irq_nr[3];
-		else if( int_pending[2] && int_mask[2] )
-			ipl_r     = irq_nr[2];
-		else if( int_pending[1] && int_mask[1] )
-			ipl_r     = irq_nr[1];
-		else if( int_pending[0] && int_mask[0] )
-			ipl_r     = irq_nr[0];
+		int_r <= int_i;
 	end
 end
 
 always @(posedge wb_clk_i)
 begin
 	if( wb_reset_i )
-		int_mask = 7'b1111111;
-	else if ( !pos_edge_trigger && !neg_edge_trigger )
-		casex(int_pending)
-			7'b1xxxxxx: int_mask = 7'b0000000;
-			7'b01xxxxx: int_mask = 7'b1000000;
-			7'b001xxxx: int_mask = 7'b1100000;
-			7'b0001xxx: int_mask = 7'b1110000;
-			7'b00001xx: int_mask = 7'b1111000;
-			7'b000001x: int_mask = 7'b1111100;
-			7'b0000001: int_mask = 7'b1111110;
-			7'b0000000: int_mask = 7'b1111111;
-		endcase
+	begin
+		ipl_r = 'h0;
+	end else begin
+		if( int_r[6] ) begin
+			ipl_r = 3'h7;
+		end else if( int_r[5]) begin
+			ipl_r = 3'h6;
+		end else if( int_r[4]) begin
+			ipl_r = 3'h5;
+		end else if( int_r[3]) begin
+			ipl_r = 3'h4;
+		end else if( int_r[2]) begin
+			ipl_r = 3'h3;
+		end else if( int_r[1]) begin
+			ipl_r = 3'h2;
+		end else if( int_r[0]) begin
+			ipl_r = 3'h1;
+		end
+	end
 end
 
-assign dato8 = data_r;
 
 assign ipl = ipl_r;
 

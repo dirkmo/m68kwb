@@ -1,4 +1,4 @@
-stack:		.4byte 0x100400
+stack:		.4byte __bss_start + 0x10
 reset:		.4byte _start
 buserror:   .4byte _start
 addrerror:  .4byte _start

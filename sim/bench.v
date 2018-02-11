@@ -26,6 +26,7 @@ initial begin
 	reset = 0;
 	#2000;
 	
+	//uut.test_int = 1;
 
 	#2000;
 	$stop;

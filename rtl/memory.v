@@ -37,10 +37,10 @@ module memory(
 	reg [7:0] memb2[2**(WIDTH-2)-1:0];
 	reg [7:0] memb3[2**(WIDTH-2)-1:0];
 
-	assign DAT_O[31:24] = SEL_I[3] ? memb3[mem_addr][7:0] : 8'hX;
-	assign DAT_O[23:16] = SEL_I[2] ? memb2[mem_addr][7:0] : 8'hX;
-	assign DAT_O[15:8]  = SEL_I[1] ? memb1[mem_addr][7:0] : 8'hX;
-	assign DAT_O[7:0]   = SEL_I[0] ? memb0[mem_addr][7:0] : 8'hX;
+	assign DAT_O[31:24] = SEL_I[3] ? memb3[mem_addr] : 8'hX;
+	assign DAT_O[23:16] = SEL_I[2] ? memb2[mem_addr] : 8'hX;
+	assign DAT_O[15:8]  = SEL_I[1] ? memb1[mem_addr] : 8'hX;
+	assign DAT_O[7:0]   = SEL_I[0] ? memb0[mem_addr] : 8'hX;
 
 	wire addr_valid = mem_addr < 2**(WIDTH-2);
 
@@ -57,25 +57,25 @@ module memory(
 
 	always @(posedge CLK_I) begin
 		if( do_write && SEL_I[3] ) begin
-			memb3[ mem_addr ][7:0] <= DAT_I[31:24];
+			memb3[ mem_addr ] <= DAT_I[31:24];
 			$display("memb3[%X] <= %02X", mem_addr, DAT_I[31:24]);
 		end
 	end
 	always @(posedge CLK_I) begin
 		if( do_write && SEL_I[2] ) begin
-			memb2[ mem_addr ][7:0] <= DAT_I[23:16];
+			memb2[ mem_addr ] <= DAT_I[23:16];
 			$display("memb2[%X] <= %02X", mem_addr, DAT_I[23:16]);
 		end
 	end
 	always @(posedge CLK_I) begin
 		if( do_write && SEL_I[1] ) begin
-			memb1[ mem_addr ][7:0] <= DAT_I[15:8];
+			memb1[ mem_addr ] <= DAT_I[15:8];
 			$display("memb1[%X] <= %02X", mem_addr, DAT_I[15:8]);
 		end
 	end
 	always @(posedge CLK_I) begin
 		if( do_write && SEL_I[0] ) begin
-			memb0[ mem_addr ][7:0] <= DAT_I[7:0];
+			memb0[ mem_addr ] <= DAT_I[7:0];
 			$display("memb0[%X] <= %02X", mem_addr, DAT_I[7:0]);
 		end
 	end

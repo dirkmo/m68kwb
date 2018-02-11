@@ -1,4 +1,5 @@
     .global _start
+    .global __ram_end
     .global _int1vec
     .global _int2vec
     .global _int3vec
@@ -10,31 +11,6 @@
 	.text
 
 .include "vectable.inc"
-
-.equ		GPIO_IN,    0x200000
-.equ		GPIO_OUT,   0x200004
-.equ		GPIO_OE,    0x200008
-.equ        GPIO_INTE,  0x20000C
-.equ        GPIO_PTRIG, 0x200010
-.equ        GPIO_CTRL,  0x200018
-
-.equ        INTCTRL_VECTOR0, 0x200200
-.equ        INTCTRL_VECTOR1, 0x200201
-.equ        INTCTRL_VECTOR2, 0x200202
-.equ        INTCTRL_VECTOR3, 0x200203
-.equ        INTCTRL_VECTOR4, 0x200204
-.equ        INTCTRL_VECTOR5, 0x200205
-.equ        INTCTRL_VECTOR6, 0x200206
-
-.equ        INTCTRL_IER,  0x200207
-
-.equ        INTCTRL_IRQ0, 0x200208
-.equ        INTCTRL_IRQ1, 0x200209
-.equ        INTCTRL_IRQ2, 0x20020a
-.equ        INTCTRL_IRQ3, 0x20020b
-.equ        INTCTRL_IRQ4, 0x20020c
-.equ        INTCTRL_IRQ5, 0x20020d
-.equ        INTCTRL_IRQ6, 0x20020e
 
 .equ		UART_RXBUF,		0x200100
 .equ		UART_TXBUF,		0x200100
@@ -53,33 +29,16 @@
 
             .org 0x400
 _start:
-            /* value to be put on data bus */
-            /*interessiert nicht, denn TG68k macht Autovektoren*/
-            /*
-            move.b #0, INTCTRL_VECTOR0
-            move.b #0, INTCTRL_VECTOR1
-            move.b #0, INTCTRL_VECTOR2
-            move.b #0, INTCTRL_VECTOR3
-            move.b #0, INTCTRL_VECTOR4
-            move.b #0, INTCTRL_VECTOR5
-            move.b #0, INTCTRL_VECTOR6
-            */
 
-            move.b #0xFF, INTCTRL_IER
+            move.w #0x2000, %SR
+            
+            jsr uart_init
 
-            /* use int vector #1..7 = 0x0064..0x007C*/
-            move.b #6, INTCTRL_IRQ0 /* ipl value to use for this int */
-            move.b #2, INTCTRL_IRQ1
-            move.b #6, INTCTRL_IRQ2
-            move.b #6, INTCTRL_IRQ3
-            move.b #6, INTCTRL_IRQ4
-            move.b #6, INTCTRL_IRQ5
-            move.b #6, INTCTRL_IRQ6
+            nop
 
             /* enable all m68k interrupts */
             andi.w #0xF0FF, %SR
-            
-            jsr uart_init
+
             move.b #'A', UART_TXBUF
 
 loop:

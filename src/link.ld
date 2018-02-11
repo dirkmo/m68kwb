@@ -5,7 +5,7 @@ ENTRY(_start)
 MEMORY
 {
 	rom (rx) : ORIGIN = 0x0, LENGTH = 0x1000
-	ram (rwx) : ORIGIN = 0x100000, LENGTH = 0x101000
+	ram (rwx) : ORIGIN = 0x100000, LENGTH = 0x10
 }
 
 SECTIONS
@@ -38,7 +38,6 @@ SECTIONS
 		*(.bss .bss.*)
 		*(COMMON)
 		. = . + 4;
-		__bss_end = ALIGN (0x8);
+		__bss_end = ALIGN (0x4);
 	} > ram
-
 }
