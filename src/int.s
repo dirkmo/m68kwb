@@ -30,7 +30,7 @@
             .org 0x400
 _start:
 
-            move.w #0x2000, %SR
+            move.w #0x2700, %SR
             
             jsr uart_init
 

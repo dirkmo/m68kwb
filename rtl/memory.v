@@ -80,5 +80,16 @@ module memory(
 		end
 	end
 
+integer i;
+/*
+initial begin
+	for( i = 0; i<2**(WIDTH-2); i = i+1 ) begin
+		memb0[i] = 'hFF;
+		memb1[i] = 'hFF;
+		memb2[i] = 'hFF;
+		memb3[i] = 'hFF;
+	end
+end
+*/
 
 endmodule
