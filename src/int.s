@@ -30,6 +30,7 @@
             .org 0x400
 _start:
 
+            /* mask all interrupts */
             move.w #0x2700, %SR
             
             jsr uart_init
@@ -37,7 +38,9 @@ _start:
             nop
 
             /* enable all m68k interrupts */
+            /*
             andi.w #0xF0FF, %SR
+            */
 
             move.b #'A', UART_TXBUF
 

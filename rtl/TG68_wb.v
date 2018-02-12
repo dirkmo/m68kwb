@@ -71,8 +71,11 @@ wire cpu_clk_en = (state_out[1:0] == 2'b01) ? 1'b1 :
 // ds		uds			lds			uds			lds
 // cpudata	[15:8]		[7:0]		[15:8]		[7:0]
 
-assign cpu_data_in[15:8] = (cpu_addr[1] == 1'b1) ? DAT_I[15:8] : DAT_I[31:24];
-assign cpu_data_in[7:0]  = (cpu_addr[1] == 1'b1) ? DAT_I[7:0] : DAT_I[23:16];
+assign cpu_data_in[15:8] = int_ack ? 8'h00 : 
+							(cpu_addr[1] == 1'b1) ? DAT_I[15:8] : DAT_I[31:24];
+
+assign cpu_data_in[7:0]  = int_ack ? { 5'b00000, cpu_addr[3:1] } : 
+							(cpu_addr[1] == 1'b1) ? DAT_I[7:0] : DAT_I[23:16];
 
 assign DAT_O[31:24] = cpu_addr[1] == 1'b0 ? cpu_data_out[15:8]  : 8'hX;
 assign DAT_O[23:16] = cpu_addr[1] == 1'b0 ? cpu_data_out[7:0] : 8'hX;
@@ -86,20 +89,32 @@ assign SEL_O[1:0] = cpu_addr[1]==1'b1 ? { uds, lds } : 2'b00;
 assign ADR_O = { cpu_addr[31:2], 2'b00 }; // 32 bit bus granuality
 assign WE_O = ~wr_n;
 
-TG68_fast cpu (
-	.clk( cpu_clk ),
-	.reset( ~RST_I ), 
-	.clkena_in( cpu_clk_en ), 
-	.data_in( cpu_data_in ), 
-	.IPL( ~ipl_i ), 
-	.address( cpu_addr ), 
-	.data_write( cpu_data_out ), 
-	.state_out( state_out ),
-	.UDS( uds_n ), 
-	.LDS( lds_n ), 
-	.wr( wr_n ),
-	.decodeOPC(),
-	.test_IPL(1'b0)
+wire nResetOut;
+wire [2:0] FC;
+
+TG68KdotC_Kernel tg68k (
+    .clk(cpu_clk), 
+    .nReset(~RST_I), 
+    .clkena_in(cpu_clk_en), 
+    .data_in(cpu_data_in), 
+    .IPL(~ipl_i), 
+    .IPL_autovector(1'b1), 
+    .berr(1'b0), 
+    .CPU( 2'h0 ), 
+    .addr_out(cpu_addr), 
+    .data_write(cpu_data_out), 
+    .nWr(wr_n), 
+    .nUDS(uds_n), 
+    .nLDS(lds_n), 
+    .busstate(state_out), 
+    .nResetOut(nResetOut), 
+    .FC(FC),
+	// debug
+    .clr_berr(), 
+    .skipFetch(), 
+    .regin_out(), 
+    .CACR_out(), 
+    .VBR_out()
 );
 
 //address <= TG68_PC when state="00" else X"ffffffff" when state="01" else memaddr;
