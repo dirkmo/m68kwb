@@ -43,8 +43,12 @@ wire uart_int;
 wire [31:0] ram_data_o;
 wire mem_ack;
 
-wire [3:0] slave_select;
-wire [3:0] slave_ack;
+wire [15:0] timer1_data_o;
+wire timer1_ack;
+wire timer1_int;
+
+wire [4:0] slave_select;
+wire [4:0] slave_ack;
 
 reg  [31:0] rom_data_o;
 wire [31:0] rom = rom_data_o[31:0];
@@ -57,14 +61,17 @@ assign cpu_data_in[31:0] =
 	slave_select == 'h2  ? ram_data_o[31:0] :
 	slave_select == 'h4  ? gpio_data_o[31:0] :
 	slave_select == 'h8  ? uart_data_o[31:0] :
+	slave_select == 'h10 ? { 16'h0000, timer1_data_o[15:0] } :
 	'dX;
 
 wire     rom_sel = slave_select[0];
 wire     ram_sel = slave_select[1];
 wire    gpio_sel = slave_select[2];
 wire    uart_sel = slave_select[3];
+wire  timer1_sel = slave_select[4];
 
 assign slave_ack = {
+	 timer1_sel & timer1_ack,
 	   uart_sel & uart_ack,
 	   gpio_sel & gpio_ack,
 	    ram_sel & mem_ack,
@@ -106,7 +113,7 @@ TG68_wb cpu(
 	.cpu_clk(cpu_clk)
 );
 
-SYSCON #(.SLAVES(4)) syscon(
+SYSCON #(.SLAVES(5)) syscon(
 	.clk(clk_50mhz),
 	.reset(reset),
 	.CLK_O( WB_CLK ),
@@ -183,23 +190,48 @@ memory #(.WIDTH(`MEMORY_ADDR_WIDTH)) mem0 (
 	.WE_I( WB_WE )
 );
 
-// Program memory
-always @(*) begin
-	case( { cpu_addr[31:0] }  )
-`include "src/int.v"
-		default: rom_data_o[31:0] = 32'h0;
-	endcase
-end
-
-reg test_int = 1'b0;
-
 interrupt_controller intctrl(
 	.wb_clk_i(WB_CLK),
 	.wb_reset_i(WB_RST),
-	.int_i( { 4'b0000, test_int, uart_int, gpio_inta }),
+	.int_i( { 4'b0000, timer1_int, uart_int, gpio_inta }),
 	.ipl(ipl[2:0])
 );
 
+wire [2:0] timer_addr =
+				(cpu_addr[2] == 1'b0) && WB_SEL[3] && WB_SEL[2] ? 3'b000 :
+				(cpu_addr[2] == 1'b0) && WB_SEL[1] && WB_SEL[0] ? 3'b001 :
+				(cpu_addr[2] == 1'b1) && WB_SEL[3] && WB_SEL[2] ? 3'b010 :
+				3'b111;
+
+wire [15:0] timer_data_in = WB_SEL[3] && WB_SEL[2] ? cpu_data_out[31:16] : cpu_data_out[15:0];
+
+pit_top timer1 (
+    .wb_dat_o(timer1_data_o[15:0]),
+    .wb_ack_o(timer1_ack),
+    .wb_clk_i(WB_CLK),
+    .wb_rst_i(WB_RST),
+    .arst_i(1'b1),
+    .wb_adr_i(timer_addr[2:0]),
+    .wb_dat_i( timer_data_in[15:0] ),
+    .wb_we_i(WB_WE),
+    .wb_stb_i(timer1_sel),
+    .wb_cyc_i(WB_CYC),
+    .wb_sel_i(2'b11),
+    .pit_o(),
+    .pit_irq_o(timer1_int),
+    .cnt_flag_o(),
+    .cnt_sync_o(),
+    .ext_sync_i(1'b0)
+);
+
+
+// Program memory
+always @(*) begin
+	case( { cpu_addr[31:0] }  )
+`include "src/timer.v"
+		default: rom_data_o[31:0] = 32'h0;
+	endcase
+end
 
 assign cpu_clk = clk_50mhz;
 
