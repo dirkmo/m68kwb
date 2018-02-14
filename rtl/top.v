@@ -3,13 +3,21 @@
 // synopsys translate_on
 
 module top(
-   input clk_50mhz, 
-   input reset,
+	input clk_50mhz, 
+	input reset,
 
-   output uart_tx, 
-   input uart_rx, 
+	input [31:0] sram_dat_i,
+	output [31:0] sram_dat_o,
+	output sram_noe_o,
+	output sram_nwe_o,
+	output sram_ncs_o,
+	output [18:0] sram_addr_o,
+	output [3:0] sram_bsel_o,
 
-   output [7:0] leds
+	output uart_tx, 
+	input uart_rx, 
+
+	output [7:0] leds
 );
 
 wire WB_CYC;
@@ -174,6 +182,7 @@ uart_top uart(
 	.dcd_pad_i(1'b0)
 );
 
+/*
 `define MEMORY_ADDR_WIDTH 4
 
 memory #(.WIDTH(`MEMORY_ADDR_WIDTH)) mem0 (
@@ -188,6 +197,28 @@ memory #(.WIDTH(`MEMORY_ADDR_WIDTH)) mem0 (
 	.SEL_I( WB_SEL ),
 	.ERR_O(),
 	.WE_I( WB_WE )
+);
+*/
+
+sram_if ram(
+    .wb_clk_i(WB_CLK),
+    .wb_dat_i(cpu_data_out),
+    .wb_dat_o(ram_data_o),
+    .wb_addr_i(cpu_addr[`MEMORY_ADDR_WIDTH-1:0] ),
+    .wb_ack_o(mem_ack),
+    .wb_sel_i(WB_SEL),
+    .wb_cyc_i(ram_sel),
+    .wb_stb_i(ram_sel),
+    .wb_rst_i(WB_RST),
+    
+	//.sram_clk(), hier noch clk für sram Zugriffe
+    .sram_dat_i(sram_dat_i),
+    .sram_dat_o(sram_dat_o),
+    .sram_noe_o(sram_noe_o),
+    .sram_nwe_o(sram_nwe_o),
+    .sram_ncs_o(sram_ncs_o),
+    .sram_addr_o(sram_addr_o),
+    .sram_bsel_o(sram_bsel_o)
 );
 
 interrupt_controller intctrl(
