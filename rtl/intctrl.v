@@ -38,27 +38,23 @@ begin
 	end
 end
 
-always @(posedge wb_clk_i)
+always @(*)
 begin
-	if( wb_reset_i )
-	begin
-		ipl_r = 'h0;
-	end else begin
-		if( int_r[6] ) begin
-			ipl_r = 3'h7;
-		end else if( int_r[5]) begin
-			ipl_r = 3'h6;
-		end else if( int_r[4]) begin
-			ipl_r = 3'h5;
-		end else if( int_r[3]) begin
-			ipl_r = 3'h4;
-		end else if( int_r[2]) begin
-			ipl_r = 3'h3;
-		end else if( int_r[1]) begin
-			ipl_r = 3'h2;
-		end else if( int_r[0]) begin
-			ipl_r = 3'h1;
-		end
+	ipl_r = 3'h0;
+	if( int_r[6] ) begin
+		ipl_r = 3'h7;
+	end else if( int_r[5]) begin
+		ipl_r = 3'h6;
+	end else if( int_r[4]) begin
+		ipl_r = 3'h5;
+	end else if( int_r[3]) begin
+		ipl_r = 3'h4;
+	end else if( int_r[2]) begin
+		ipl_r = 3'h3;
+	end else if( int_r[1]) begin
+		ipl_r = 3'h2;
+	end else if( int_r[0]) begin
+		ipl_r = 3'h1;
 	end
 end
 
