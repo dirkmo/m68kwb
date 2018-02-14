@@ -6,12 +6,12 @@ module top(
 	input clk_50mhz, 
 	input reset,
 
-	input [31:0] sram_dat_i,
-	output [31:0] sram_dat_o,
+	input wire [31:0] sram_dat_i,
+	output wire [31:0] sram_dat_o,
 	output sram_noe_o,
 	output sram_nwe_o,
 	output sram_ncs_o,
-	output [18:0] sram_addr_o,
+	output [17:0] sram_addr_o,
 	output [3:0] sram_bsel_o,
 
 	output uart_tx, 
@@ -86,22 +86,6 @@ assign slave_ack = {
 	    rom_sel /*rom always ack*/
 };
 
-
-// --> debug
-always @(posedge WB_CLK) begin
-	if( WB_STB != 'd0 ) begin
-		if( (WB_WE == 'd0) ) begin
-			if( slave_select == 'd1 ) begin
-				$display("ROM access %08X = %08X", cpu_addr, cpu_data_in);
-			end else begin
-				$display("read access %08X = %08X", cpu_addr, cpu_data_in);
-			end
-		end else begin
-			$display("write access %08X = %08X", cpu_addr, cpu_data_out);
-		end
-	end
-end
-// debug <--
 
 TG68_wb cpu(
 	.CLK_I( WB_CLK ),
@@ -204,12 +188,13 @@ sram_if ram(
     .wb_clk_i(WB_CLK),
     .wb_dat_i(cpu_data_out),
     .wb_dat_o(ram_data_o),
-    .wb_addr_i(cpu_addr[`MEMORY_ADDR_WIDTH-1:0] ),
+    .wb_addr_i( cpu_addr[19:0] ),
     .wb_ack_o(mem_ack),
     .wb_sel_i(WB_SEL),
     .wb_cyc_i(ram_sel),
     .wb_stb_i(ram_sel),
     .wb_rst_i(WB_RST),
+    .wb_we_i(WB_WE),
     
 	//.sram_clk(), hier noch clk für sram Zugriffe
     .sram_dat_i(sram_dat_i),
@@ -220,6 +205,8 @@ sram_if ram(
     .sram_addr_o(sram_addr_o),
     .sram_bsel_o(sram_bsel_o)
 );
+
+
 
 interrupt_controller intctrl(
 	.wb_clk_i(WB_CLK),
