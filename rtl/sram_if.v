@@ -1,38 +1,56 @@
 module sram_if(
-    input wb_clk_i,
-    input [31:0] wb_dat_i,
-    input [31:0] wb_dat_o,
-    input [AWIDTH-1:0] wb_addr_i,
-    input [3:0] wb_sel_i,
-    input wb_ack_o,
-    input wb_cyc_i,
-    input wb_stb_i,
-    input wb_rst_i,
-    input wb_we_i,
+    wb_clk_i,
+    wb_dat_i,
+    wb_dat_o,
+    wb_addr_i,
+    wb_sel_i,
+    wb_ack_o,
+    wb_cyc_i,
+    wb_stb_i,
+    wb_rst_i,
+    wb_we_i,
 
-    input [31:0] sram_dat_i,
-    output [31:0] sram_dat_o,
-    output [AWIDTH-3:0] sram_addr_o,
-    input [3:0] sram_bsel_o,
-    output sram_noe_o,
-    output sram_nwe_o,
-    output sram_ncs_o
+    sram_dat_i,
+    sram_dat_o,
+    sram_addr_o,
+    sram_bsel_o,
+    sram_oe_o,
+    sram_we_o,
+    sram_cs_o
 );
 
 parameter AWIDTH = 20; // byte address (although the 2 lower bits are not used)
 parameter WAIT_STATES = 1;
 
+input wb_clk_i;
+input [31:0] wb_dat_i;
+output [31:0] wb_dat_o;
+input [AWIDTH-1:0] wb_addr_i;
+input [3:0] wb_sel_i;
+output wb_ack_o;
+input wb_cyc_i;
+input wb_stb_i;
+input wb_rst_i;
+input wb_we_i;
 
-
-assign sram_noe_o = ~sram_oe;
-assign sram_nwe_o = ~sram_we;
-assign sram_ncs_o = ~sram_cs;
-assign sram_bsel_o[3:0] = wb_sel_i[3:0];
-assign sram_addr_o[AWIDTH-3:0] = wb_addr_i[AWIDTH-1:2];
+input [31:0] sram_dat_i;
+output [31:0] sram_dat_o;
+output [AWIDTH-3:0] sram_addr_o;
+output [3:0] sram_bsel_o;
+output wire sram_oe_o;
+output wire sram_we_o;
+output wire sram_cs_o;
 
 wire sram_cs = wb_cyc_i && wb_stb_i;
 wire sram_we =  sram_cs && wb_we_i;
 wire sram_oe =  sram_cs && ~wb_we_i;
+
+assign sram_oe_o = sram_oe;
+assign sram_we_o = sram_we;
+assign sram_cs_o = sram_cs;
+assign sram_bsel_o[3:0] = sram_cs ? wb_sel_i[3:0] : 4'b0000;
+assign sram_addr_o[AWIDTH-3:0] = wb_addr_i[AWIDTH-1:2];
+
 
 assign wb_dat_o[31:24] = sram_oe && wb_sel_i[3] ? sram_dat_i[31:24] : 'hX;
 assign wb_dat_o[23:16] = sram_oe && wb_sel_i[2] ? sram_dat_i[23:16] : 'hX;

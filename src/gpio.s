@@ -6,9 +6,7 @@ reset:		.4byte _start
 
 	.text
 
-.equ		GPIO_IN,  0x200000
-.equ		GPIO_OUT, 0x200004
-.equ		GPIO_OE,  0x200008
+.include "regmap.inc"
 
 _start:
 			move.l #0x000000FF, GPIO_OE

@@ -4,8 +4,10 @@
 #include <string.h>
 
 int main(int argc, char **argv) {
+    const char *regname = "bootstrap_data_o";
+
     if( argc < 2 ) {
-        fprintf(stderr, "bin2verilog infile [bitwidth]\n");
+        fprintf(stderr, "bin2verilog infile [bitwidth] [regname]\n");
         return 1;
     }
     FILE *datei = fopen( argv[1], "r" );
@@ -16,8 +18,11 @@ int main(int argc, char **argv) {
 
 	int width = 16;
 
-	if( argc == 3 ) {
+	if( argc > 2 ) {
 		width = strtoul( argv[2], NULL, 10 );
+        if( argc > 3 ) {
+            regname = argv[3];
+        }
 	}
 	if( width % 8 != 0 ) {
 		fprintf( stderr, "Width not a multiple of 8\n" );
@@ -33,7 +38,7 @@ int main(int argc, char **argv) {
 		if( read < 1 ) {
 			break;
 		}
-        printf("32'h%08X: boot_read[%d:0] = %d'h", pos, width-1, width);
+        printf("32'h%08X: %s[%d:0] = %d'h", pos, regname, width-1, width);
 		for( int i = 0; i < width/8; i++ ) {
 			printf("%02X", vals[i] );
 		}

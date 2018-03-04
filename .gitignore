@@ -20,3 +20,14 @@ bench_isim_beh.exe
 bench_isim_beh.wdb
 *.stx
 *.lso
+*.swp
+spartan3_top.*
+spartan3_top_*
+!spartan_top.v
+isim/
+_ngo/
+Default.wcfg
+xst/
+xlnx_auto_0_xdb/
+xilinxsim.ini
+iseconfig/
