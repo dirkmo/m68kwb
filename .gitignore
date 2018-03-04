@@ -31,3 +31,5 @@ xst/
 xlnx_auto_0_xdb/
 xilinxsim.ini
 iseconfig/
+impact.xsl
+impact_impact.xwbt
