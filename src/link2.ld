@@ -38,4 +38,5 @@ SECTIONS
     __bss_end = ALIGN (0x4);
   } > ram
 
+  _top_of_heap = .;
 }
