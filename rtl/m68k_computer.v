@@ -16,10 +16,15 @@ module m68k_computer(
 	input uart_rx, 
 
 	output [7:0] leds,
-    input bootswitch
+    input bootswitch,
+    
+    output sdspi_cs_n,
+    output sdspi_sck,
+    output sdspi_mosi,
+    input sdspi_miso
 );
 
-localparam SLAVES=6;
+localparam SLAVES=7;
 
 wire WB_CYC;
 wire WB_CLK;
@@ -56,12 +61,16 @@ wire timer1_ack;
 wire timer2_ack;
 wire timer1_int;
 wire timer2_int;
+wire sdspi_int;
 
 wire [31:0] bootctrl_data_o;
 wire bootctrl_ack;
 
 wire [31:0] mem_data_o;
 wire mem_ack;
+
+wire [31:0] sdspi_data_o;
+wire sdspi_ack;
 
 wire [SLAVES-1:0] slave_select;
 wire [SLAVES-1:0] slave_ack;
@@ -76,6 +85,7 @@ assign cpu_data_in[31:0] =
     slave_select == 'h8  ? uart_data_o[31:0] :
 	slave_select == 'h10 ? { 16'h0000, timer1_data_o[15:0] } :
     slave_select == 'h20 ? { 16'h0000, timer2_data_o[15:0] } :
+    slave_select == 'h40 ? sdspi_data_o[31:0] :
 	'dX;
 
 wire      mem_sel = slave_select[0];
@@ -84,8 +94,10 @@ wire     gpio_sel = slave_select[2];
 wire     uart_sel = slave_select[3];
 wire   timer1_sel = slave_select[4];
 wire   timer2_sel = slave_select[5];
+wire    sdspi_sel = slave_select[6];
 
 assign slave_ack = {
+      sdspi_sel & sdspi_sel,
      timer2_sel & timer1_ack,
 	 timer1_sel & timer1_ack,
 	   uart_sel & uart_ack,
@@ -275,6 +287,28 @@ memory mem0(
 	.sram_bsel_o(sram_bsel_o),
     
     .mode(mode)
+);
+
+//---------------------------------------
+// SD SPI module
+
+sdspi sdspi0 (
+    .i_clk(WB_CLK), 
+    .i_wb_cyc(sdspi_sel), 
+    .i_wb_stb(sdspi_sel), 
+    .i_wb_we(WB_WE), 
+    .i_wb_addr(cpu_addr[3:2]), 
+    .i_wb_data(cpu_data_out), 
+    .o_wb_ack(sdspi_ack), 
+    .o_wb_stall(), 
+    .o_wb_data(sdspi_data_o), 
+    .o_cs_n(sdspi_cs_n), 
+    .o_sck(sdspi_sck), 
+    .o_mosi(sdspi_mosi), 
+    .i_miso(sdspi_miso), 
+    .o_int(sdspi_int), 
+    .i_bus_grant(1'b1), 
+    .o_debug()
 );
 
 reg clk_25mhz = 0;

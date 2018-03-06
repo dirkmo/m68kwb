@@ -74,6 +74,7 @@ module pit_top #(parameter ARST_LVL = 1'b0,      // asynchronous reset level
   wire                  pit_slave;     // PIT in Slave Mode, ext_sync_i selected
   wire           [ 3:0] pit_pre_scl;   // Prescaler modulo
   wire                  counter_sync;  // 
+  wire                  pit_ien;
   
   // Wishbone Bus interface
   pit_wb_bus #(.ARST_LVL(ARST_LVL),

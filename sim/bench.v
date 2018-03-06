@@ -5,7 +5,7 @@ module bench();
 reg clk_50mhz = 0;
 reg reset = 1;
 
-reg bootswitch = 0;
+reg bootswitch = 1;
 
 wire [7:0] gpio;
 wire uart_tx;
@@ -67,7 +67,12 @@ spartan3_top uut(
     .sram1_lbn(sram1_lbn),    
     
     .sram_oen(sram_oen),
-    .sram_wen(sram_wen)
+    .sram_wen(sram_wen),
+    
+    .sdspi_cs_n(sdspi_cs_n),
+    .sdspi_sck(sdspi_sck),
+    .sdspi_mosi(sdspi_mosi),
+    .sdspi_miso(sdspi_miso)
 );
 
 initial begin

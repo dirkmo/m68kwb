@@ -24,3 +24,7 @@
 .equ		TIMER2_MOD, 0x80000312
 .equ		TIMER2_CNT, 0x80000314
 
+.equ        SDSPI_CMD,    0x80000400
+.equ        SDSPI_DAT,    0x80000404
+.equ        SDSPI_FIFOA,  0x80000408
+.equ        SDSPI_FIFOB,  0x8000040C

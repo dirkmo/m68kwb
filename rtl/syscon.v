@@ -15,7 +15,7 @@ module SYSCON(
 	ERR_O
 );
 
-parameter SLAVES = 6;
+parameter SLAVES = 7;
 
 input clk;
 input reset;
@@ -44,19 +44,22 @@ output ERR_O;
 `define  LEN_TIMER2       'h6
 `define BASE_TIMER3     32'h8000_0320
 `define  LEN_TIMER3       'h6
+`define BASE_SDSPI      32'h8000_0400
+`define  LEN_SDSPI        'h10
+
 
 
 wire [6:0] stb;
 assign STB_O = STB_I ? stb : 'd0;
 assign ERR_O = STB_I && (stb == 'd0);
 
-assign stb[0] = (ADR_I[31:0] >= `BASE_RAM)      && (ADR_I[31:0] < `BASE_RAM + `LEN_RAM );
+assign stb[0] = (ADR_I[31:0] >= `BASE_RAM)      && (ADR_I[31:0] < `BASE_RAM      + `LEN_RAM );
 assign stb[1] = (ADR_I[31:0] >= `BASE_BOOTCTRL) && (ADR_I[31:0] < `BASE_BOOTCTRL + `LEN_BOOTCTRL );
-assign stb[2] = (ADR_I[31:0] >= `BASE_GPIO)     && (ADR_I[31:0] < `BASE_GPIO + `LEN_GPIO);
-assign stb[3] = (ADR_I[31:0] >= `BASE_UART)     && (ADR_I[31:0] < `BASE_UART + `LEN_UART);
-assign stb[4] = (ADR_I[31:0] >= `BASE_TIMER1)   && (ADR_I[31:0] < `BASE_TIMER1 + `LEN_TIMER1);
-assign stb[5] = (ADR_I[31:0] >= `BASE_TIMER2)   && (ADR_I[31:0] < `BASE_TIMER2 + `LEN_TIMER1 );
-
+assign stb[2] = (ADR_I[31:0] >= `BASE_GPIO)     && (ADR_I[31:0] < `BASE_GPIO     + `LEN_GPIO);
+assign stb[3] = (ADR_I[31:0] >= `BASE_UART)     && (ADR_I[31:0] < `BASE_UART     + `LEN_UART);
+assign stb[4] = (ADR_I[31:0] >= `BASE_TIMER1)   && (ADR_I[31:0] < `BASE_TIMER1   + `LEN_TIMER1);
+assign stb[5] = (ADR_I[31:0] >= `BASE_TIMER2)   && (ADR_I[31:0] < `BASE_TIMER2   + `LEN_TIMER1 );
+assign stb[6] = (ADR_I[31:0] >= `BASE_SDSPI)    && (ADR_I[31:0] < `BASE_SDSPI    + `LEN_SDSPI );
 
 assign RST_O = reset;
 assign CLK_O = clk;

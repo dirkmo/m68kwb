@@ -52,12 +52,12 @@ reg  [31:0] bootloader_data_o;
 wire [31:0] ram_data_o;
 
 wire sram_ack;
-assign wb_ack_o = (mode == `MODE_RAM) ? sram_ack : 1'b1; // TODO: schreiben berücksichtigen
+assign wb_ack_o = (mode == `MODE_RAM) ? sram_ack : 1'b1; // TODO: schreiben bercksichtigen
 
 assign wb_dat_o =
-             (mode == `MODE_BOOTSTRAP)  &&  bootstrap_addr_valid ? bootstrap_data_o :
-             (mode == `MODE_BOOTLOADER) && bootloader_addr_valid ? bootloader_data_o :
-                                                                   ram_data_o;
+             (mode[1:0] == `MODE_BOOTSTRAP)  &&  bootstrap_addr_valid ? bootstrap_data_o :
+             (mode[1:0] == `MODE_BOOTLOADER) && bootloader_addr_valid ? bootloader_data_o :
+                                                                        ram_data_o;
 
 always @(*) begin
     bootstrap_addr_valid = 1'b1;
@@ -75,7 +75,7 @@ always @(*) begin
     bootloader_addr_valid = 1'b1;
     bootloader_data_o[31:0] = 32'hX;
     case( { wb_addr_i[31:0] }  )
-`include "src/bootloader.v"
+`include "src/sdspi.v"
         default: begin
             bootloader_data_o[31:0] = 32'hX;
             bootloader_addr_valid = 1'b0;
@@ -95,7 +95,7 @@ sram_if ram(
     .wb_rst_i( wb_rst_i ),
     .wb_we_i( wb_we_i ),
     
-	//.sram_clk(), hier noch clk für sram Zugriffe
+	//.sram_clk(), hier noch clk fr sram Zugriffe
     .sram_dat_i( sram_dat_i ),
     .sram_dat_o( sram_dat_o ),
     .sram_oe_o( sram_oe_o ),

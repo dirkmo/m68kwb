@@ -26,6 +26,8 @@ wire [15:0] cpu_data_in;
 wire [1:0] state_out;
 wire uds_n, uds;
 wire lds_n, lds;
+wire long_start;
+wire long_done;
 wire wr_n;
 assign uds = ~uds_n;
 assign lds = ~lds_n;
@@ -35,7 +37,7 @@ assign STB_O = CYC_O;
 reg ACK_r;
 always @(negedge CLK_I) ACK_r <= ACK_I;
 
-assign int_ack = (state_out[1:0] == 2'b10) && (cpu_addr[31:4] == 28'hFFFFFFF);
+wire int_ack = (state_out[1:0] == 2'b10) && (cpu_addr[31:4] == 28'hFFFFFFF);
 
 wire cpu_clk_en = (state_out[1:0] == 2'b01) ? 1'b1 : 
 				                 (int_ack ) ? 1'b1 :
@@ -71,23 +73,41 @@ wire cpu_clk_en = (state_out[1:0] == 2'b01) ? 1'b1 :
 // ds		uds			lds			uds			lds
 // cpudata	[15:8]		[7:0]		[15:8]		[7:0]
 
+// da die CPU einen 16 bit Datenbus hat, aber einige 32bit Wishbone Peripherien nur
+// vollstndige 32 bit Zugriffe erlauben (ohne WB_SEL), werden long writes zu einem
+// Zugriff zusammengefasst.
+
+
 assign cpu_data_in[15:8] = int_ack ? 8'h00 : 
 							(cpu_addr[1] == 1'b1) ? DAT_I[15:8] : DAT_I[31:24];
 
 assign cpu_data_in[7:0]  = int_ack ? { 5'b00000, cpu_addr[3:1] } : 
 							(cpu_addr[1] == 1'b1) ? DAT_I[7:0] : DAT_I[23:16];
 
-assign DAT_O[31:24] = cpu_addr[1] == 1'b0 ? cpu_data_out[15:8]  : 8'hX;
-assign DAT_O[23:16] = cpu_addr[1] == 1'b0 ? cpu_data_out[7:0] : 8'hX;
+reg [15:0] upper_word;
+always @(posedge cpu_clk)
+begin
+    if(long_start) begin
+        upper_word <= cpu_data_out;
+    end
+end
+
+assign DAT_O[31:24] = cpu_addr[1] == 1'b0 ? long_done ? upper_word[15:8] : cpu_data_out[15:8]  : 8'hX;
+assign DAT_O[23:16] = cpu_addr[1] == 1'b0 ? long_done ? upper_word[7:0]  : cpu_data_out[7:0]   : 8'hX;
 assign DAT_O[15:8]  = cpu_addr[1] == 1'b1 ? cpu_data_out[15:8]  : 8'hX;
 assign DAT_O[7:0]   = cpu_addr[1] == 1'b1 ? cpu_data_out[7:0] : 8'hX;
 
-assign SEL_O[3:2] = cpu_addr[1]==1'b0 ? { uds, lds } : 2'b00;
+assign SEL_O[3:2] = ~wr_n && long_done ? 2'b11 : cpu_addr[1]==1'b0 ? { uds, lds } : 2'b00;
 assign SEL_O[1:0] = cpu_addr[1]==1'b1 ? { uds, lds } : 2'b00;
+
+TODO:
+// SEL_O[3:2] msste '00 sein bei long_start==1
+
+
 
 
 assign ADR_O = { cpu_addr[31:2], 2'b00 }; // 32 bit bus granuality
-assign WE_O = ~wr_n;
+assign WE_O = long_start ? 1'b0 : ~wr_n; // if writing, delay WE_O (for atomic 32 bit accesses)
 
 wire nResetOut;
 wire [2:0] FC;
@@ -114,14 +134,10 @@ TG68KdotC_Kernel tg68k (
     .skipFetch(), 
     .regin_out(), 
     .CACR_out(), 
-    .VBR_out()
+    .VBR_out(),
+    
+    .longStart(long_start),
+    .longDone(long_done)
 );
-
-//address <= TG68_PC when state="00" else X"ffffffff" when state="01" else memaddr;
-//LDS <= '0' WHEN (datatype/="00" OR state="00" OR memaddr(0)='1') AND state/="01" ELSE '1';
-//UDS <= '0' WHEN (datatype/="00" OR state="00" OR memaddr(0)='0') AND state/="01" ELSE '1';
-//state_out <= state;
-//wr <= '0' WHEN state="11" ELSE '1';
-//state <= "01";		--decode cycle, execute cycle
 
 endmodule

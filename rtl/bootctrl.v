@@ -40,7 +40,7 @@ begin
         if(wb_stb_i && wb_we_i) begin
             if( wb_sel_i == 4'b1000 ) begin
                 ctrl <= wb_dat_i[26:25];
-					 reset <= wb_dat_i[24];
+                reset <= wb_dat_i[24];
             end
         end
     end
@@ -51,7 +51,7 @@ assign mode_o[1:0] = ctrl[`RAM_ENABLE] ? `MODE_RAM :
                                          `MODE_BOOTSTRAP;
 
 assign wb_dat_o[23:0]  = 16'h0;
-assign wb_dat_o[31:24] = { 6'b0, ctrl[2:1] };
+assign wb_dat_o[31:24] = { 5'b0, ctrl[2:1], 1'b0 };
 assign wb_ack_o = 1'b1;
 
 endmodule

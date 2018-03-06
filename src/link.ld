@@ -40,4 +40,6 @@ SECTIONS
 		. = . + 4;
 		__bss_end = ALIGN (0x4);
 	} > ram
+
+    __ram_end = ORIGIN(ram) + LENGTH(ram);
 }

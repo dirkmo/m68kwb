@@ -85,7 +85,10 @@ entity TG68KdotC_Kernel is
 	skipFetch      : out std_logic;
 	regin_out      : out std_logic_vector(31 downto 0);
 	CACR_out       : out std_logic_vector( 3 downto 0);
-	VBR_out        : out std_logic_vector(31 downto 0)
+	VBR_out        : out std_logic_vector(31 downto 0);
+    -- 32 bit access for long reads
+    longStart     : out std_logic;
+    longDone      : out std_logic
   );
 end TG68KdotC_Kernel;
 
@@ -336,6 +339,9 @@ begin
   );
 
   long_start_alu <= to_bit(not memmaskmux(3));
+
+  longStart <= '1' when long_start = '1' else '0';
+  longDone  <= '1' when  long_done = '1' else '0';
 
   process (memmaskmux)
   begin

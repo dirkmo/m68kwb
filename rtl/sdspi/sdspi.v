@@ -35,7 +35,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 //
 //
-`default_nettype	none
+//`default_nettype	none
 //
 `define	SDSPI_CMD_ADDRESS	2'h0
 `define	SDSPI_DAT_ADDRESS	2'h1
@@ -221,7 +221,10 @@ module	sdspi(i_clk,
 	reg	[25:0]	r_watchdog;
 	reg		r_watchdog_err;
 	reg	pre_cmd_state;
-
+    
+    reg	pre_rsp_state, nonzero_out;
+    wire	[(LGFIFOLN+1):0]	w_blklimit;
+    
 	// Relieve some stress from the WB bus timing
 
 	initial	r_cmd_busy = 1'b0;
@@ -460,7 +463,7 @@ module	sdspi(i_clk,
 		else
 			second_rsp_state <= `SDSPI_RSP_GETWORD;
 
-	reg	pre_rsp_state, nonzero_out;
+//	reg	pre_rsp_state, nonzero_out;
 	always @(posedge i_clk)
 		if (ll_out_stb)
 			nonzero_out <= (|ll_out_dat);
@@ -783,7 +786,7 @@ module	sdspi(i_clk,
 	end
 
 	reg	[(LGFIFOLN-1):0]	r_blklimit;
-	wire	[(LGFIFOLN+1):0]	w_blklimit;
+	//wire	[(LGFIFOLN+1):0]	w_blklimit;
 	always @(posedge i_clk)
 		r_blklimit[(LGFIFOLN-1):0] <= (1<<r_lgblklen)-1;
 	assign	w_blklimit = { r_blklimit, 2'b11 };

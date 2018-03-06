@@ -9,7 +9,9 @@ module spartan3_top(
     sram_addr,
     sram0_data, sram0_cen, sram0_ubn, sram0_lbn,
     sram1_data, sram1_cen, sram1_ubn, sram1_lbn,    
-    sram_oen, sram_wen
+    sram_oen, sram_wen,
+    
+    sdspi_cs_n, sdspi_sck, sdspi_mosi, sdspi_miso
 );
 
 input clk_50mhz;
@@ -32,6 +34,11 @@ output sram1_lbn;
 
 output sram_oen;
 output sram_wen;
+
+output sdspi_cs_n;
+output sdspi_sck;
+output sdspi_mosi;
+input sdspi_miso;
 
 wire [31:0] sram_dat_o;
 wire sram_oe;
@@ -82,7 +89,12 @@ m68k_computer m68kcomputer(
 	.uart_rx(uart_rx), 
 
 	.leds(leds),
-    .bootswitch(bootswitch)
+    .bootswitch(bootswitch),
+    
+    .sdspi_cs_n(sdspi_cs_n),
+    .sdspi_sck(sdspi_sck),
+    .sdspi_mosi(sdspi_mosi),
+    .sdspi_miso(sdspi_miso)
 );
 
 
