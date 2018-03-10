@@ -22,6 +22,7 @@ bench_isim_beh.wdb
 *.lso
 *.swp
 spartan3_top.*
+!spartan3_top.bit
 spartan3_top_*
 !spartan_top.v
 isim/
