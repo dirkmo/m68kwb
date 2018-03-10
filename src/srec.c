@@ -75,7 +75,7 @@ int receive_line( int type ) {
                 break;
             case CHECKSUM:
                 if( dat_chksum == 0xFF ) {
-                    writechar('K');
+                    //writechar('K');
                     return 0;
                 }
                 goto error;
@@ -109,7 +109,6 @@ int main(void) {
     uart_flush();
     while( 1 ) {
         char r = readchar();
-        writechar(r);
         if( r == 'S' ) {
             type = readchar() - '0';
             if( type >= 0 && type < 10 ) {
@@ -119,8 +118,9 @@ int main(void) {
             print("Starting program at $");
             printhex(userprog_address, 8);
             print("...\r\n");
-            void (*func)(void) = (void*)userprog_address;
-            func();
+            void (*func)(int, char*[]) = (void*)userprog_address;
+            func(0, (void*)0);
+            print("srecord parser ready.\r\n(g)o  (a)ddress\r\n");
         } else if( r == 'a' ) {
             print("Address: $");
             printhex(userprog_address, 8);

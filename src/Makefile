@@ -26,11 +26,15 @@ clean:
 
 
 test: test.o crt0.o
-	$(LD) $(LIBS) -Map=test.map -nostartfiles -T link2.ld crt0.o test.o -o test
+	m68k-none-elf-gcc test.c -o test -T /opt/m68k/m68k-none-elf/lib/m68kwb.ld -m68000 -Xlinker -Map=test.map -fomit-frame-pointer
 	$(OBJCOPY) -O binary -S test test.bin
+	$(OBJCOPY) -O srec -S test test.srec
 
 
 prog: $(WHAT_TO_PROG)
 	stty -F $(SERIAL) raw 115200
 	xxd -u -p $(WHAT_TO_PROG).bin | tr -d '\n' > $(SERIAL)
 	echo '*' > $(SERIAL)
+
+	cat test.srec > $(SERIAL)
+	echo 'g' > $(SERIAL)
