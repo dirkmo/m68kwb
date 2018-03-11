@@ -1,6 +1,8 @@
 #ifndef __REGMAP_H__
 #define __REGMAP_H__
 
+#include <stdint.h>
+
 #ifndef uint8_t
 typedef unsigned char uint8_t;
 #endif
@@ -50,9 +52,9 @@ typedef unsigned long uint32_t;
 #define TIMER2_MOD          (*(volatile uint16_t*)0x80000312)
 #define TIMER2_CNT          (*(volatile uint16_t*)0x80000314)
 
-#define SDSPI_CMD           (*(volatile uint32_t*)0x80000400)
+#define SDSPI_CTRL          (*(volatile uint32_t*)0x80000400)
 #define SDSPI_DAT           (*(volatile uint32_t*)0x80000404)
-#define SDSPI_FIFOA         (*(volatile uint32_t*)0x80000408)
-#define SDSPI_FIFOB         (*(volatile uint32_t*)0x8000040C)
+#define SDSPI_FIFO0         (*(volatile uint32_t*)0x80000408)
+#define SDSPI_FIFO1         (*(volatile uint32_t*)0x8000040C)
 
 #endif

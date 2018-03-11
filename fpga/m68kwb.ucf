@@ -77,3 +77,8 @@ Net sram0_lbn LOC=p5;
 
 Net sram_oen LOC=k4;
 Net sram_wen LOC=g3;
+
+Net sdspi_miso LOC=C15;
+Net sdspi_sck  LOC=C16;
+Net sdspi_mosi LOC=D15;
+Net sdspi_cs   LOC=D16;

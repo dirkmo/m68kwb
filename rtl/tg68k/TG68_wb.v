@@ -29,6 +29,7 @@ wire lds_n, lds;
 wire long_start;
 wire long_done;
 wire wr_n;
+wire wr = ~wr_n;
 assign uds = ~uds_n;
 assign lds = ~lds_n;
 assign CYC_O = uds || lds;
@@ -97,17 +98,14 @@ assign DAT_O[23:16] = cpu_addr[1] == 1'b0 ? long_done ? upper_word[7:0]  : cpu_d
 assign DAT_O[15:8]  = cpu_addr[1] == 1'b1 ? cpu_data_out[15:8]  : 8'hX;
 assign DAT_O[7:0]   = cpu_addr[1] == 1'b1 ? cpu_data_out[7:0] : 8'hX;
 
-assign SEL_O[3:2] = ~wr_n && long_done ? 2'b11 : cpu_addr[1]==1'b0 ? { uds, lds } : 2'b00;
+assign SEL_O[3:2] = long_done && wr  ? 2'b11 :
+                    long_start && wr ? 2'b00 :
+                    cpu_addr[1]==1'b0 ? { uds, lds } : 2'b00;
+
 assign SEL_O[1:0] = cpu_addr[1]==1'b1 ? { uds, lds } : 2'b00;
 
-TODO:
-// SEL_O[3:2] msste '00 sein bei long_start==1
-
-
-
-
 assign ADR_O = { cpu_addr[31:2], 2'b00 }; // 32 bit bus granuality
-assign WE_O = long_start ? 1'b0 : ~wr_n; // if writing, delay WE_O (for atomic 32 bit accesses)
+assign WE_O = long_start ? 1'b0 : wr; // if writing, delay WE_O (for atomic 32 bit accesses)
 
 wire nResetOut;
 wire [2:0] FC;
