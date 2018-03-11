@@ -51,7 +51,7 @@ assign mode_o[1:0] = ctrl[`RAM_ENABLE] ? `MODE_RAM :
                                          `MODE_BOOTSTRAP;
 
 assign wb_dat_o[23:0]  = 16'h0;
-assign wb_dat_o[31:24] = { 6'b0, ctrl[2:1] };
+assign wb_dat_o[31:24] = { 5'b0, ctrl[2:1], 1'b0 };
 assign wb_ack_o = 1'b1;
 
 endmodule
